@@ -34,6 +34,12 @@
   + definition `csum`, lemmas `csum0`, `csumE`, `csum_ge0`, `csum_fset`
     `csum_image`, `ereal_pseries_csum`, `csum_bigcup`
   + notation `\csum_(i in S) a i`
+  + definition `gsum`, lemmas `gsum0`, `gsumE`, `gsum_ge0`, `gsum_fset`
+    `gsum_image`, `gsum_nat_lim`, `gsum_bigcup`
+  + notation `\gsum_(i in S) a i`
+  + lemma `ub_ereal_sup_adherent2`
+  + definition `csum`, lemmas `csum0`, `csum_ge0`, `csum_fset`,
+    `csum_countable`, `csum_nat_lim`, `csum_bigcup`
 - file `cardinality.v`
   + lemmas `in_inj_comp`, `enum0`, `enum_recr`, `eq_set0_nil`, `eq_set0_fset0`,
     `image_nat_maximum`, `fset_nat_maximum`
@@ -45,6 +51,11 @@
   + definition `inverse`
   + lemmas `injective_left_inverse`, `injective_right_inverse`,
     `surjective_right_inverse`,
+  + defintion `surjective`, lemmas `surjective_id`, `surjective_set0`,
+    `surjective_image`, `surjective_image_eq0`, `surjective_comp`
+  + definition `set_bijective`
+  + definition `inverse`
+  + lemmas `inj_left_inverse`, `inj_right_inverse`, `sur_right_inverse`,
   + notation `` `I_n ``
   + lemmas `II0`, `II1`, `IIn_eq0`, `II_recr`
   + lemmas `set_bijective_D1`, `pigeonhole`, `Cantor_Bernstein`
@@ -54,6 +65,12 @@
   + definition `card_eq`, notation `_ #= _`
   + lemmas `card_eq_sym`, `card_eq_trans`, `card_eq00`, `card_eqP`, `card_eqTT`,
     `card_eq_II`, `card_eq_le`, `card_eq_ge`, `card_leP`
+  + lemmas `card_le_surj`, `card_lexx`, `card_le0x`, `card_le_trans`, `card_le0P`,
+    `card_le_II`
+  + definition `card_eq`, notation `_ #= _`
+  + lemmas `card_eq_sym`, `card_eq_trans`, `card_eq00`, `card_eqP`, `card_eqTT`,
+    `card_eq_II`, `card_eq_le`
+  + lemma `card_leP`
   + lemma `set_bijective_inverse`
   + definition `countable`
   + lemmas `countable0`, `countable_injective`, `countable_trans`
@@ -79,6 +96,12 @@
   + definition `measure_is_complete`
 - in `ereal.v`:
   + notation `0`/`1` for `0%R%:E`/`1%R:%E` in `ereal_scope`
+  + lemmas `injective_set_finite`, `injective_card_le`
+  + lemmas `surjective_set_finite`, `surjective_card_le`
+  + lemmas `set_finite_diff`, `card_le_diff`
+  + lemmas `set_finite_inter_set0_union`, `set_finite_inter`
+  + definitions `enumeration`, `enum_wo_rep`
+  + lemmas `infinite_nat`, `infinite_prod_nat`
 
 ### Changed
 
