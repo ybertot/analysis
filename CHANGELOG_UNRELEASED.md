@@ -135,6 +135,8 @@
     `onT_can`, `onT_can_in`, `in_onT_can` (now in MathComp)
 - in `forms.v`:
   + lemma `mxdirect_delta`, `row_mx_eq0`, `col_mx_eq0`, `map_mx_comp`
+- in `nngnum.v`:
+  + lemma `filter_andb`
 
 ### Infrastructure
 
