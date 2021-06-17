@@ -102,6 +102,33 @@ rewrite (fI _  _ _ _ fdEfb) ?in_itv /= ?lexx ?(itvP dI) ?aLb //.
 by rewrite (le_trans _ cLb) //  (itvP dI).
 Qed.
 
+Lemma strict_to_large_itv (a b x : R) :
+  x \in `]a, b[ -> x \in `[a, b].
+Proof.
+by rewrite !in_itv /= => /andP[aLx xLb]; rewrite !le_eqVlt aLx xLb !orbT.
+Qed.
+
+Lemma inverse_continuous (a b : R) (f g : R -> R) :
+  {in `](Num.min a b), (Num.max a b)[, continuous f} ->
+  {in `](Num.min a b), (Num.max a b)[, cancel f g} ->
+  {in `](Num.min (f a) (f b)), (Num.max (f a) (f b))[, continuous g}.
+Proof.
+move=> ctf fK.
+move=> y yin.
+apply/cvg_distP=> _ /posnumP[e].
+set u := Num.min a b.
+set v := Num.max a b.
+have uLv : u <= v  by rewrite /u /v; case: (ltrP a b) => //= it; rewrite ltW.
+have : y \in `[(Num.min (f u) (f v)), (Num.max (f u) (f v))].
+  rewrite /u /v; case: (ltrgtP a b) yin;
+    rewrite ?(minC (f b)) ?(maxC (f b)) // => abs;
+    try apply strict_to_large_itv.
+  rewrite abs in_itv /= minxx maxxx=> /andP[fbLx xLfb].
+  suff : f b < f b by rewrite ltxx.
+  by apply: (lt_trans fbLx).
+move/(IVT uLv)=> /(_ ctf).
+Admitted.
+
 (* Maybe this belongs in normedtype. *)
 Lemma near_in_interval (a b : R) :
   {in `]a, b[, forall y, \forall z \near y, z \in `]a, b[}.
@@ -138,6 +165,7 @@ Lemma inverse_increasing_continuous (a b k : R) (f g : R -> R) :
 Proof.
 move=> kgt0 incrf gK y ayb.
 apply/cvg_distP=> _ /posnumP[e].
+set k := g 
 have main1 : \forall x \near y, g y < g x -> `|g y - g x| < e%:num.
   rewrite (near_shift 0 y); near=> z; rewrite /=subr0.
   move=> yltz; rewrite ltr0_norm ?opprB; last by rewrite subr_lt0.
