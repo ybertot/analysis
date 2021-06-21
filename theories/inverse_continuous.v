@@ -135,7 +135,7 @@ rewrite in_itv /= -ltr_subl_addl -ltr_subr_addl ltr_normlW /=; last first.
 rewrite -ltr_subr_addr ltr_normlW //.
 near: z; apply: nbhs0_lt; rewrite (lt_le_trans mingt0) //.
 by rewrite le_minl lexx orbT.
-Unshelve. all: end_near. Qed.
+Grab Existential Variables. all: end_near. Qed.
 
 Lemma near_0_in_interval (a b : R) :
   {in `]a, b[, forall y, \forall z \near 0 : R, (z + y : R) \in `]a, b[}.
@@ -143,7 +143,7 @@ Proof.
 move=> y ayb.
 rewrite (near_shift y 0); near=> z; rewrite /= sub0r subrK; near: z.
 by rewrite near_simpl; apply: near_in_interval.
-Unshelve. all: end_near. Qed.
+Grab Existential Variables. all: end_near. Qed.
 
 Lemma inverse_continuous (a b : R) (f g : R -> R) :
   {in `[(Num.min a b), (Num.max a b)], continuous f} ->
@@ -272,7 +272,7 @@ have yfcfd : y \in `](f c), (f d)[.
   by rewrite in_itv /= fcy.
 rewrite !near_simpl; near=> z; apply: infcfd; near: z.
 by rewrite !near_simpl; apply: near_in_interval.
-Unshelve. all: end_near. Qed.
+Grab Existential Variables. all: end_near. Qed.
 
 Lemma sqr_continuous : continuous (exprz (R := R) ^~ 2).
 Proof.
@@ -324,6 +324,6 @@ rewrite -(ltr_pexpn2r twogt0) ?inE ?nnegrE ?ltrW ?sqrtr_ge0 //.
 have [ylt0 | ] := boolP(y < 0).
   by rewrite ltr0_sqrtr // expr0n /= exprn_gt0.
 by rewrite -leNgt => yge0; rewrite sqr_sqrtr.
-Unshelve. all: end_near. Qed.
+Grab Existential Variables. all: end_near. Qed.
 
 End real_inverse_functions.
