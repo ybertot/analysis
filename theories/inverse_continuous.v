@@ -145,6 +145,52 @@ rewrite (near_shift y 0); near=> z; rewrite /= sub0r subrK; near: z.
 by rewrite near_simpl; apply: near_in_interval.
 Grab Existential Variables. all: end_near. Qed.
 
+Lemma inverse_monotone (a b : R) (f g : R -> R) :
+  a < b ->
+  {in `[a, b], continuous f} ->
+  {in `[a, b], cancel f g} ->
+  {in `[(Num.min (f a) (f b)), (Num.max (f a) (f b))] &, {mono g : x y / x <= y}} \/
+  {in `[(Num.min (f a) (f b)), (Num.max (f a) (f b))] &, {mono g : x y /~ x <= y}}.
+Proof.
+move=> aLb ctf fK.
+have aab : a \in `[a, b] by rewrite in_itv /= lexx ltW.
+have bab : b \in `[a, b] by rewrite in_itv /= lexx andbT ltW.
+have fanfb : f a != f b.
+  by apply/eqP=> fafb; move: (aLb); rewrite -(fK a) // fafb (fK b) // ltxx.
+wlog incr : f g ctf fK fanfb/ {in `[a, b] &, {mono f : x y / x <= y}}.
+  move=> main.
+  have ijf : If f a b by move=> x y xin yin fq; rewrite -(fK x) ?fq ?(fK y).
+  case: (near_injective_monotone ijf ctf) => monf.
+    by apply: (main _ _ ctf fK fanfb monf).
+  have monof : {in `[a, b] &, {mono (-%R \o f) : x y / x <= y}}.
+    by move=> x y xin yin; rewrite ler_oppl opprK; apply: monf.
+  have ofK : {in `[a, b], cancel (-%R \o f) (g \o -%R)}.
+    by move=> x xin; rewrite /= opprK; apply: fK.
+  have ctof : {in `[a, b], continuous (-%R \o f)}.
+    by move=> x ?; apply: continuous_comp;[apply: ctf | apply: opp_continuous].
+  have ofanofb : -f a != - f b by rewrite (inj_eq oppr_inj).
+  have faLfb : f b < f a.
+    by rewrite lt_neqAle monf ?in_itv //= ltW ?andbT // eq_sym.
+  case: (main _ _ ctof ofK ofanofb monof)=> monog.
+    right; move=> x y xin yin; rewrite -(opprK y) ler_oppl.
+    rewrite -[X in (g X <= _) = _](opprK x).
+    have := monog (-x) (-y); rewrite /= -oppr_max -oppr_min.
+    case: (ltrgtP (f b) (f a)) (faLfb) xin yin=> _ _ // xin yin.
+    by apply; rewrite oppr_itv /= !opprK.
+  left; move=> x y xin yin; rewrite -(opprK y) ler_oppr.
+    rewrite -[X in (g X <= _) = _](opprK x).
+  have := monog (- x) (-y); rewrite /= -oppr_max -oppr_min.
+  case: (ltrgtP (f b) (f a)) (faLfb) xin yin=> _ _ // xin yin.
+  by apply; rewrite oppr_itv /= !opprK.
+left.
+have faLfb : f a < f b.
+  by rewrite lt_neqAle fanfb incr // ltW.
+move=> x y; case: (ltrgtP (f a) (f b)) (faLfb)=> // _ _ xin yin.
+have := IVT (ltW aLb) ctf; case: (ltrgtP (f a) (f b)) (faLfb)=> // _ _ ivt.
+case: (ivt _ xin) => [u uin fux]; case: (ivt _ yin) => [v vin fvy].
+by rewrite -fvy -fux; apply/esym; rewrite !fK //; apply: incr.
+Qed.
+
 Lemma inverse_continuous (a b : R) (f g : R -> R) :
   {in `[(Num.min a b), (Num.max a b)], continuous f} ->
   {in `[(Num.min a b), (Num.max a b)], cancel f g} ->
