@@ -191,6 +191,84 @@ case: (ivt _ xin) => [u uin fux]; case: (ivt _ yin) => [v vin fvy].
 by rewrite -fvy -fux; apply/esym; rewrite !fK //; apply: incr.
 Qed.
 
+Lemma monotone_surjective_continuous (a b : R) (f g : R -> R) :
+  a < b ->
+  {in `[f a, f b] &, {mono g : x y / x <= y}} ->
+  {in `[a, b], cancel f g} ->
+  {in `](f a), (f b)[ , continuous g}.
+Proof.
+move=> aLb mong fK y yin; apply/cvg_distP=> _ /posnumP[e].
+(*have faLfb : f a < f b.
+  by rewrite (lt_trans (_ : f a <  y) _) // (itvP yin).
+have aLgy : a < g y.
+  rewrite -(fK a) // lt_neqAle mong //; last first.
+      by rewrite strict_to_large_itv.
+    by rewrite in_itv /= lexx ltW.
+  rewrite ltW // ?(itvP yin) ?andbT //.
+*)
+suff main : (forall (a b : R) (g f : R -> R) y, a < b ->
+         {in `[(f a), (f b)] &, {mono g : x y / x <= y}} ->
+         {in `[a, b], cancel f g} ->
+         y \in `](f a), (f b)[ ->
+         \forall u \near y, u < y -> `|g y - g u| < e%:num).
+  have aab : a \in `[a, b] by rewrite in_itv /= lexx ltW.
+  have bab : b \in `[a, b] by rewrite in_itv /= lexx andbT ltW.
+  rewrite !near_simpl.
+  have obLoa : -b < -a by rewrite ltr_oppl opprK.
+  have monog : {in `[(-(f b)), (-(f a))]&,
+         {mono (-%R \o g \o -%R) : v w / v <= w}}.
+    move=> v w; rewrite -!oppr_itvcc /= => vin win.
+    by rewrite ler_oppl opprK mong // ler_oppl opprK.
+  have ofK : {in `[(-b), (-a)], cancel (-%R \o f \o -%R)(-%R \o g \o -%R)}.
+    move=> v; rewrite -oppr_itvcc /= => vin.
+    by rewrite opprK fK // opprK.
+  have oyin : -y \in `](- f b), (- f a)[ by rewrite oppr_itvoo !opprK.
+  have := main _ _ (-%R \o g \o -%R)(-%R \o f \o -%R) (-y) obLoa.
+    rewrite /= 2!opprK=> /(_ monog ofK oyin) main'.
+  near=> u; case: (ltrgtP u y); last 1 first.
+  - by move=> ->; rewrite subrr normr0.
+  - by near: u; rewrite near_simpl; apply: (main a b _ f).
+  - rewrite -(opprK y) -(opprK u) ltr_oppr -normrN opprD [in X in X -> _]opprK.
+  admit.
+move=> {a b f g aLb mong fK y yin} a b g f y aLb mong fK yin.
+have aab : a \in `[a, b] by rewrite in_itv /= lexx ltW.
+have bab : b \in `[a, b] by rewrite in_itv /= lexx andbT ltW.
+case: (lerP a (g y - e%:num))=> [aLgyme | gymeLa ]; last first.
+  have : forall u, f a < u -> u < y -> `|g y - g u| < e%:num.
+    move=> u aLu uLy; have : g u <= g y.
+      by rewrite mong;[rewrite ltW //| rewrite in_itv /= ltW // (ltW (lt_trans uLy _)) // (itvP yin) //| rewrite strict_to_large_itv].
+    rewrite -subr_ge0=> /ger0_norm => ->.
+    rewrite ltr_subl_addr -ltr_subl_addl (lt_le_trans gymeLa) //.
+    rewrite -(fK a) // mong.
+    - by rewrite ltW.
+    - have faLfb : f a < f b.
+        by rewrite (lt_trans (_ : f a <  y) _) // (itvP yin).
+      by rewrite in_itv /= lexx ltW.
+    by rewrite in_itv /= ltW // ltW // (lt_trans uLy) // (itvP yin).
+    near: u; rewrite near_simpl.
+suff : (\forall u \near y, u < y -> `|g y - g u| < e%:num) /\
+       (\forall u \near y, y < u -> `|g y - g u| < e%:num).
+wlog /andP [esmall_a esmall_b] : e / (a <= g y - e%:num) && (g y + e%:num <= b).
+  move=> main.
+  set e' := Num.min e%:num (Num.min (g y - a) (b - g y)).
+  have e'gt0 : 0 < e'.
+    rewrite /e'; case: (lerP e%:num (Num.min (g y - a) (b - g y))) => // _.
+    by case: (lerP (g y - a) (b - g y)) => _; rewrite subr_gt0.
+  have e'in : (a <= x - e') && (x + e' <= b).
+    rewrite ler_subr_addr -ler_subr_addl -[X in _ && X]ler_subr_addl /e'.
+    case: (lerP e%:num (Num.min (x - a) (b - x)));
+    case: (lerP (x - a) (b - x))=> //.
+    + by move=> cmp2 cmp1; rewrite (le_trans _ cmp2) ?andbT.
+    + by move=> /ltW cmp2 cmp1; rewrite (le_trans _ cmp2) ?andbT.
+    + by move=> cmp2 cmp1; rewrite lexx.
+    by move=> /ltW cmp2 cmp1; rewrite lexx ?andbT.
+  have e'lee : e' <= e%:num.
+    by rewrite /e'; case: (lerP e%:num (Num.min (x - a) (b - x)))=> // /ltW.
+  have main' := (main (PosNum e'gt0) e'in).
+  near=> y'; apply: (lt_le_trans _ e'lee).
+  rewrite -[e']/(num_of_pos (PosNum e'gt0)).
+  near: y'; exact main'.
+
 Lemma inverse_continuous (a b : R) (f g : R -> R) :
   {in `[(Num.min a b), (Num.max a b)], continuous f} ->
   {in `[(Num.min a b), (Num.max a b)], cancel f g} ->
