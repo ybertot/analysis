@@ -229,12 +229,16 @@ suff main : (forall (a b : R) (g f : R -> R) y, a < b ->
   - by move=> ->; rewrite subrr normr0.
   - by near: u; rewrite near_simpl; apply: (main a b _ f).
   - rewrite -(opprK y) -(opprK u) ltr_oppr -normrN opprD [in X in X -> _]opprK.
+    near: u; rewrite near_simpl.
   admit.
 move=> {a b f g aLb mong fK y yin} a b g f y aLb mong fK yin.
 have aab : a \in `[a, b] by rewrite in_itv /= lexx ltW.
 have bab : b \in `[a, b] by rewrite in_itv /= lexx andbT ltW.
+have fafafb : f a \in `[(f a), (f b)].
+  rewrite in_itv /= lexx.
+  admit.
 case: (lerP a (g y - e%:num))=> [aLgyme | gymeLa ]; last first.
-  have : forall u, f a < u -> u < y -> `|g y - g u| < e%:num.
+  have below : forall u, f a < u -> u < y -> `|g y - g u| < e%:num.
     move=> u aLu uLy; have : g u <= g y.
       by rewrite mong;[rewrite ltW //| rewrite in_itv /= ltW // (ltW (lt_trans uLy _)) // (itvP yin) //| rewrite strict_to_large_itv].
     rewrite -subr_ge0=> /ger0_norm => ->.
@@ -245,7 +249,27 @@ case: (lerP a (g y - e%:num))=> [aLgyme | gymeLa ]; last first.
         by rewrite (lt_trans (_ : f a <  y) _) // (itvP yin).
       by rewrite in_itv /= lexx ltW.
     by rewrite in_itv /= ltW // ltW // (lt_trans uLy) // (itvP yin).
-    near: u; rewrite near_simpl.
+  near=> u; apply: below; suff h : u \in `](f a), (f b)[ by rewrite (itvP h).
+  by near: u; apply: near_in_interval.
+have below : forall u, f (g y - e%:num) < u -> u < y ->
+     `|g y - g u| < e%:num.
+  move=> u aLu uLy; have : g u <= g y.
+    rewrite mong;[rewrite ltW //| | rewrite strict_to_large_itv //].
+    rewrite in_itv /= (ltW (le_lt_trans _ aLu)) /=.
+      by rewrite (ltW (lt_trans uLy _)) // (itvP yin).
+    rewrite -mong ?fK ?aab ?fafafb //.
+    admit.
+admit.
+rewrite -subr_ge0=> /ger0_norm => ->.
+rewrite ltr_subl_addr -ltr_subl_addl //.
+rewrite -(fK (g y - e%:num)) //.
+  rewrite lt_neqAle mong.
+
+    rewrite mong;[rewrite ltW //| rewrite in_itv /= ltW // | rewrite strict_to_large_itv //].
+ 
+
+
+  ppp
 suff : (\forall u \near y, u < y -> `|g y - g u| < e%:num) /\
        (\forall u \near y, y < u -> `|g y - g u| < e%:num).
 wlog /andP [esmall_a esmall_b] : e / (a <= g y - e%:num) && (g y + e%:num <= b).
