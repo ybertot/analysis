@@ -192,60 +192,53 @@ by rewrite -fvy -fux; apply/esym; rewrite !fK //; apply: incr.
 Qed.
 
 Lemma monotone_surjective_continuous (a b : R) (f g : R -> R) :
-  a < b -> f a < f b ->
-
-  {in ([set f x | x in (mem `[ a, b])])%classic &, {mono g : x y / x <= y}} ->
+  a < b ->
+  {in `[a, b] &, {mono f : x y / x <= y}} ->
+  {in `[(f a), (f b)] &, {mono g : x y / x <= y}} ->
   {in `[a, b], cancel f g} ->
   {in `](f a), (f b)[ , continuous g}.
 Proof.
-move=> aLb faLfb mong fK y yin; apply/cvg_distP=> _ /posnumP[e].
-(*have faLfb : f a < f b.
+move=> aLb monf mong fK y yin; apply/cvg_distP=> _ /posnumP[e].
+have faLfb : f a < f b.
   by rewrite (lt_trans (_ : f a <  y) _) // (itvP yin).
-have aLgy : a < g y.
-  rewrite -(fK a) // lt_neqAle mong //; last first.
-      by rewrite strict_to_large_itv.
-    by rewrite in_itv /= lexx ltW.
-  rewrite ltW // ?(itvP yin) ?andbT //.
-*)
+have aab : a \in `[a, b] by rewrite in_itv /= lexx ltW.
+have bab : b \in `[a, b] by rewrite in_itv /= lexx andbT ltW.
+(*have aLgy : a < g y.
+  rewrite -(fK a) // ltNge mong //; last first.
+      by rewrite in_itv /= lexx ltW.
+    by rewrite strict_to_large_itv.
+  by rewrite -ltNge (itvP yin). *)
 suff main : (forall (a b : R) (g f : R -> R) y, a < b -> f a < f b ->
-         {in ([set f x | x in (mem `[a, b])])%classic &,
-             {mono g : x y / x <= y}} ->
+         {in `[a, b] &, {mono f : x y / x <= y}} ->
+         {in `[(f a), (f b)] &, {mono g : x y / x <= y}} ->
          {in `[a, b], cancel f g} ->
          y \in `](f a), (f b)[ ->
          \forall u \near y, u < y -> `|g y - g u| < e%:num).
-  have aab : a \in `[a, b] by rewrite in_itv /= lexx ltW.
-  have bab : b \in `[a, b] by rewrite in_itv /= lexx andbT ltW.
   rewrite !near_simpl.
   have obLoa : -b < -a by rewrite ltr_oppl opprK.
   have ofbLofa : - f b < - f a by rewrite ltr_oppl opprK.
-  have monog : {in ([set (-%R \o f \o -%R) x |
-                     x in (mem `[(-b), (-a)])])%classic &,
-         {mono (-%R \o g \o -%R) : v w / v <= w}}.
-    move=> v w; rewrite 2!inE /= => [] [gv gvP1 gvP2] [gw gwP1 gwP2].
-    rewrite ler_oppl opprK mong //.
-        by rewrite ler_oppl opprK.
-      rewrite inE; exists (-gw).
-        suff : (-gw) \in `[a, b] by rewrite inE.
-        by rewrite oppr_itvcc.
-      by apply/eqP; rewrite -eqr_oppLR; apply/eqP.
-    rewrite inE; exists (-gv).
-      suff : (-gv) \in `[a, b] by rewrite inE.
-      by rewrite oppr_itvcc.
-    by apply/eqP; rewrite -eqr_oppLR; apply/eqP.
+  have monof : {in `[(-b), (-a)] &, 
+        {mono (-%R \o f \o -%R) : v w / v <= w}}.
+    move=> v w vin win; rewrite /= ler_oppl opprK monf ?oppr_itvcc //.
+    by rewrite ler_oppl opprK.
+  have monog : {in `[(-f b), (-f a)] &,
+          {mono (-%R \o g \o -%R) : v w / v <= w}}.
+    move=> v w vin win; rewrite /= ler_oppl opprK mong ?oppr_itvcc //.
+    by rewrite ler_oppl opprK.
   have ofK : {in `[(-b), (-a)], cancel (-%R \o f \o -%R)(-%R \o g \o -%R)}.
     move=> v; rewrite -oppr_itvcc /= => vin.
     by rewrite opprK fK // opprK.
-
   have oyin : -y \in `](- f b), (- f a)[ by rewrite oppr_itvoo !opprK.
   have := main _ _ (-%R \o g \o -%R)(-%R \o f \o -%R) (-y) obLoa.
-    rewrite /= 2!opprK=> /(_ ofbLofa monog ofK oyin) main'.
+    rewrite /= 2!opprK=> /(_ ofbLofa monof monog ofK oyin) main'.
   near=> u; case: (ltrgtP u y); last 1 first.
   - by move=> ->; rewrite subrr normr0.
   - by near: u; rewrite near_simpl; apply: (main a b _ f).
   - rewrite -(opprK y) -(opprK u) ltr_oppr -normrN opprD [in X in X -> _]opprK.
     near: u; rewrite near_simpl.
     admit.
-move=> {a b f g aLb faLfb mong fK y yin} a b g f y aLb faLfb mong fK yin.
+move=> {a b f g aLb faLfb aab bab monf mong fK y yin}. 
+move=> a b g f y aLb faLfb monf mong fK yin.
 have aab : a \in `[a, b] by rewrite in_itv /= lexx ltW.
 have bab : b \in `[a, b] by rewrite in_itv /= lexx andbT ltW.
 have fafafb : f a \in `[(f a), (f b)].
@@ -263,46 +256,25 @@ case: (lerP a (g y - e%:num))=> [aLgyme | gymeLa ]; last first.
   by near: u; apply: near_in_interval.
 have below : forall u, f (g y - e%:num) < u -> u < y ->
      `|g y - g u| < e%:num.
+  have gyLb : g y <= b.
+    by rewrite -(fK b) // mong ?(itvP yin) // strict_to_large_itv.
+  have gymein : g y - e%:num \in `[a, b].
+    by rewrite in_itv /= aLgyme (le_trans _ gyLb) // ler_subl_addl ler_addr.
   move=> u fgymeLu uLy; have : g u <= g y.
     rewrite mong;[rewrite ltW //| | rewrite strict_to_large_itv //].
-    near: u.
     rewrite in_itv /= (ltW (le_lt_trans _ fgymeLu)) /=.
       by rewrite (ltW (lt_trans uLy _)) // (itvP yin).
-    rewrite -mong ?fK ?aab ?fafafb //.
-    admit.
-admit.
-rewrite -subr_ge0=> /ger0_norm => ->.
-rewrite ltr_subl_addr -ltr_subl_addl //.
-rewrite -(fK (g y - e%:num)) //.
-  rewrite lt_neqAle mong.
-
-    rewrite mong;[rewrite ltW //| rewrite in_itv /= ltW // | rewrite strict_to_large_itv //].
- 
-
-
-  ppp
-suff : (\forall u \near y, u < y -> `|g y - g u| < e%:num) /\
-       (\forall u \near y, y < u -> `|g y - g u| < e%:num).
-wlog /andP [esmall_a esmall_b] : e / (a <= g y - e%:num) && (g y + e%:num <= b).
-  move=> main.
-  set e' := Num.min e%:num (Num.min (g y - a) (b - g y)).
-  have e'gt0 : 0 < e'.
-    rewrite /e'; case: (lerP e%:num (Num.min (g y - a) (b - g y))) => // _.
-    by case: (lerP (g y - a) (b - g y)) => _; rewrite subr_gt0.
-  have e'in : (a <= x - e') && (x + e' <= b).
-    rewrite ler_subr_addr -ler_subr_addl -[X in _ && X]ler_subr_addl /e'.
-    case: (lerP e%:num (Num.min (x - a) (b - x)));
-    case: (lerP (x - a) (b - x))=> //.
-    + by move=> cmp2 cmp1; rewrite (le_trans _ cmp2) ?andbT.
-    + by move=> /ltW cmp2 cmp1; rewrite (le_trans _ cmp2) ?andbT.
-    + by move=> cmp2 cmp1; rewrite lexx.
-    by move=> /ltW cmp2 cmp1; rewrite lexx ?andbT.
-  have e'lee : e' <= e%:num.
-    by rewrite /e'; case: (lerP e%:num (Num.min (x - a) (b - x)))=> // /ltW.
-  have main' := (main (PosNum e'gt0) e'in).
-  near=> y'; apply: (lt_le_trans _ e'lee).
-  rewrite -[e']/(num_of_pos (PosNum e'gt0)).
-  near: y'; exact main'.
+    by rewrite monf.
+  rewrite -subr_ge0=> /ger0_norm=> ->.
+  admit.
+near=> u; apply: below.
+suff : u \in `]f (g y - e%:num), (f b)[ by move=> uin; rewrite (itvP uin).
+near: u; apply: near_in_interval; rewrite in_itv /= ?(itvP yin) andbT.
+have gKy : y = f (g y) by admit.
+  rewrite [X in _ < X]gKy ltNge monf //.
+    by rewrite -ltNge ltr_subl_addr ltr_addl.
+(* again the same conditions *)
+Admitted.
 
 Lemma inverse_continuous (a b : R) (f g : R -> R) :
   {in `[(Num.min a b), (Num.max a b)], continuous f} ->
