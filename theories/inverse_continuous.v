@@ -191,6 +191,7 @@ case: (ivt _ xin) => [u uin fux]; case: (ivt _ yin) => [v vin fvy].
 by rewrite -fvy -fux; apply/esym; rewrite !fK //; apply: incr.
 Qed.
 
+(*
 Lemma monotone_surjective_continuous (a b : R) (f g : R -> R) :
   a < b -> f a < f b ->
 
@@ -303,29 +304,22 @@ wlog /andP [esmall_a esmall_b] : e / (a <= g y - e%:num) && (g y + e%:num <= b).
   near=> y'; apply: (lt_le_trans _ e'lee).
   rewrite -[e']/(num_of_pos (PosNum e'gt0)).
   near: y'; exact main'.
+*)
 
-Lemma inverse_continuous (a b : R) (f g : R -> R) :
-  {in `[(Num.min a b), (Num.max a b)], continuous f} ->
-  {in `[(Num.min a b), (Num.max a b)], cancel f g} ->
+Lemma inverse_continuous (a b : R) (f g : R -> R) : a < b ->
+  {in `[a, b], continuous f} ->
+  {in `[a, b], cancel f g} ->
   {in `](Num.min (f a) (f b)), (Num.max (f a) (f b))[, continuous g}.
 Proof.
-wlog aLb : a b f g / a < b.
-  move=> main.
-  case: (ltrgtP a b); last first.
-  - move=> <-; rewrite minxx maxxx=> _ _ y; rewrite in_itv //=.
-    by case: (ltrgtP (f a) y).
-  - move=> blta; move: blta (main _ _ f g blta); case: (ltrP b a)=> // _ _.
-    by rewrite minC maxC.
-  move=> altb; move: altb (main _ _ f g altb); case: (ltrP a b)=> // _ _.
+move=> aLb.
 wlog faLfb : f g / f a < f b.
   case: (ltrgtP (f a) (f b)); last first.
   - by move=> _ _ _ _ y; rewrite in_itv /=; case: (ltrgtP (f a) y).
   - move=> fbLfa /(_ (-%R \o f) (g \o -%R)) main ctf fK.
-    have ctf' : {in `[(Num.min a b), (Num.max a b)], continuous (-%R \o f)}.
+    have ctf' : {in `[a, b], continuous (-%R \o f)}.
       move=> x xin.
       by apply: continuous_comp;[apply ctf | apply: opp_continuous].
-    have fK' : {in `[(Num.min a b), (Num.max a b)],
-                      cancel (-%R \o f)(g \o -%R)}.
+    have fK' : {in `[a, b], cancel (-%R \o f)(g \o -%R)}.
       by move=> x; rewrite /= opprK; exact: fK.
     suff ct_gopp : {in `](-f a), (-f b)[, continuous (g \o -%R)}.
       rewrite (_ : g = (g \o -%R) \o -%R); last first.
@@ -334,18 +328,12 @@ wlog faLfb : f g / f a < f b.
         by rewrite forE; apply: opp_continuous.
       rewrite forE; apply: ct_gopp.
       by rewrite oppr_itvoo !opprK.
-    move=> x xin; apply: main.
+    move=> x xin; apply: main => //.
     + by rewrite /= ltr_oppr opprK.
-    + case: (ltrgtP a b) (aLb) ctf=> // _ _ ctf.
-      move=> y yin; apply: continuous_comp; first by apply: ctf.
-      by apply: opp_continuous.
-    + case: (ltrgtP a b) (aLb) fK=> _ _ fK y yin // /=; rewrite opprK.
-      by apply: fK.
     by rewrite /= -oppr_min -oppr_max; case: (ltrgtP (f b) (f a)) (fbLfa).
   move=> faLfb main; move: {main} (main _ g faLfb).
   by case: (ltrP (f a) (f b)) faLfb.
-case: (ltrP a b) (aLb)=> // _ _; case: (ltrP (f a) (f b)) (faLfb)=> // _ _.
-move=> ctf fK.
+case: (ltrP (f a) (f b)) (faLfb)=> // _ _ ctf fK.
 have ivt : {in `](f a), (f b)[, forall y, exists2 x, a < x < b & y = f x}.
   move=> y yin.
   have yin' : y \in `[(f a), (f b)] by rewrite strict_to_large_itv.
