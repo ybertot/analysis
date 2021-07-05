@@ -368,6 +368,68 @@ have gK := interval_injective_continuous_bijective aLb ctf incrf fK.
 by apply: monotone_surjective_continuous.
 Qed.
 
+Lemma continuous_inverse  (f g : R -> R) x :
+  (\forall z \near x, g (f z) = z) ->
+  (\forall z \near x, {for z, continuous f}) ->
+  {for f x, continuous g}.
+Proof.
+move=> [e egt0 fK].
+move=> [e' e'gt0 ctf].
+set e'' := Num.min e e' / 2.
+have e''gt0 : 0 < e''.
+  apply: divr_gt0; last by rewrite ltr0Sn.
+  by rewrite /Num.min; case: ifP.
+have [e''lte e''lte'] : e'' < e /\ e'' < e'.
+  have e''lt2 : e'' < e'' + e'' by rewrite ltr_addl //.
+  rewrite (@lt_le_trans _ _ (e'' +  e'') _ e') //
+    ?(@lt_le_trans _ _ (e'' +  e'') _ e) // /e'' -mulrDl
+    (le_trans (midf_le (lexx (Num.min e e'))).2) //;
+    by case: (lerP e e') => // strict; rewrite ltW.
+have fK' : {in `[x - e'', x + e''], cancel f g}.
+  move=> y; rewrite in_itv /= => /andP [yin1 yin2]; apply: fK=> /=.
+  rewrite -opprB normrN real_ltr_distl ?num_real // (lt_le_trans _ yin1) /=.
+    rewrite (le_lt_trans yin2) //.
+    by rewrite ltr_add2.
+  by rewrite ltr_add2 ltr_oppl opprK.
+have ctf' : {in `[x - e'', x + e''], continuous f}.
+  move=> y; rewrite in_itv /= => /andP [yin1 yin2]; apply: ctf => /=.
+  rewrite -opprB normrN real_ltr_distl ?num_real // (lt_le_trans _ yin1) /=.
+    rewrite (le_lt_trans yin2) //.
+    by rewrite ltr_add2.
+  by rewrite ltr_add2 ltr_oppl opprK.
+have cmp : x - e'' < x + e''.
+  by rewrite ltr_subl_addr -addrA ltr_addl // addr_gt0.
+apply: (inverse_continuous cmp ctf' fK').
+have ifx : If f (x - e'') (x + e'').
+  by move=> y z yin zin fq; rewrite -(fK' y) // fq fK'.
+have cmp1 : x - e'' < x by rewrite ltr_subl_addr ltr_addl.
+have cmp2 : x < x + e'' by rewrite ltr_addl.
+have [incr | decr] := near_injective_monotone ifx ctf'.
+  have := cmp1; rewrite ltNge -incr; first 1 last.
+      by rewrite in_itv /= !ltW.
+    by rewrite in_itv /= lexx ltW.
+  rewrite -ltNge => fxmeLfx.
+  have := cmp2; rewrite ltNge -incr; first 1 last.
+      by rewrite in_itv /= lexx ltW.
+    by rewrite in_itv /= !ltW.
+  rewrite -ltNge => fxLfxpe.
+  have bounds : f (x - e'') < f (x + e'').
+    by rewrite (lt_trans fxmeLfx).
+  by case: ltrgtP (bounds) => // _ _; rewrite in_itv /= fxmeLfx.
+have := cmp1; rewrite ltNge -decr; first 1 last.
+    by rewrite in_itv /= lexx ltW.
+  by rewrite in_itv /= !ltW.
+rewrite -ltNge => fxLfxme.
+have := cmp2; rewrite ltNge -decr; first 1 last.
+    by rewrite in_itv /= !ltW.
+  by rewrite in_itv /= lexx ltW.
+rewrite -ltNge => fxpeLfx.
+have bounds : f (x + e'') < f (x - e'').
+  by rewrite (lt_trans fxpeLfx).
+by case: ltrgtP (bounds) => // _ _; rewrite in_itv /= fxpeLfx.
+Qed.
+
+
 Lemma sqr_continuous : continuous (exprz (R := R) ^~ 2).
 Proof.
 move => x s.
