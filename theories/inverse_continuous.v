@@ -23,11 +23,76 @@ Let MTf (f : R -> R) a b :=
   {in `[a, b] &, {mono f : x y / x <= y}} \/
   {in `[a, b] &, {mono f : x y /~ x <= y}}.
 
+Lemma triplet_injective_increasing (f : R -> R) (a c b : R) :
+  f a <= f b -> If f a b -> Cf f a b -> a <= c <= b -> f a <= f c <= f b.
+Proof.
+move=> faLfb fI fC /andP[aLc cLb].
+have aLb : a <= b  by apply: le_trans cLb.
+have cIab : c \in `[a,b] by rewrite in_itv /= aLc.
+have acIab d : d \in `[a,c] -> d \in `[a,b].
+  by move=> /itvP dI; rewrite in_itv /= (le_trans _ cLb) // dI.
+have cbIab d : d \in `[c,b] -> d \in `[a,b].
+  by move=> /itvP dI; rewrite in_itv /= (le_trans aLc) // dI.
+case: (ltrgtP (f a) (f c)) => /= [faLfc|fcLfa|faEfc]; last first.
+- by rewrite -(fI _  _ _ _ faEfc) // in_itv /= lexx.
+- case: (ltrgtP (f b) (f c))=> /= [fbLfc|fcLfb|fbEfc]; last first.
+  + by move: fcLfa; rewrite -fbEfc ltNge faLfb.
+  + have [d dI]: exists2 d, d \in `[c, b] & f d = f a.
+      apply: IVT => //; first by move=> d dIab; apply/fC/cbIab.
+      by case: ltrgtP fcLfb => // _ _; rewrite ltW.
+    move=> fdEfa; move: fcLfa.
+    have : a <= c <= d by rewrite aLc  (itvP dI).
+    rewrite (fI _  _ _ _ fdEfa) ?in_itv /= ?lexx ?(itvP dI) //.
+      by case: (ltrgtP a) => // ->; rewrite ltxx.
+    by rewrite (le_trans aLc) //  (itvP dI).
+  by have := lt_trans fbLfc fcLfa; rewrite ltNge faLfb.
+case: (ltrgtP (f b) (f c))=> //= fbLfc.
+have [d dI]: exists2 d, d \in `[a, c] & f d = f b.
+  apply: IVT => //; first by move=> d dIab; apply/fC/acIab.
+  by case: ltrgtP faLfc; rewrite // faLfb // ltW.
+move=> fdEfb; move: fbLfc.
+have : d <= c <= b by rewrite cLb  (itvP dI).
+rewrite (fI _  _ _ _ fdEfb) ?in_itv /= ?lexx ?(itvP dI) ?aLb //.
+  by case: (ltrgtP b) => //= ->; rewrite ltxx.
+by rewrite (le_trans _ cLb) //  (itvP dI).
+Qed.
+
+Lemma segment_injective_increasing (f : R -> R) (a b : R) :
+  f a <= f b -> If f a b -> Cf f a b -> Mf f a b.
+Proof.
+move=> faLfb fI fC x y /itvP xI /itvP yI.
+have aLb : a <= b by apply: le_trans (_ : x <= b); rewrite xI.
+have : x <= y -> f x <= f y.
+  move=> xLy.
+  have /andP[faLfx fxLfb] : f a <= f x <= f b.
+    by apply: triplet_injective_increasing ; rewrite ?xI.
+  suff /andP[-> //] : f x <= f y <= f b.
+  apply: triplet_injective_increasing
+    => [|x1 x2 /itvP x1I /itvP x2I |x1 /itvP x1I|] //.
+    - by apply: fI; rewrite in_itv /= (le_trans (_ : a <= x)) !(xI, x1I,
+x2I).
+    - by apply: fC; rewrite in_itv /= (le_trans (_ : a <= x)) !(xI, x1I).
+    by rewrite xLy yI.
+have : y <= x -> f y <= f x.
+  move=> yLx.
+  have /andP[faLfx fxLfb] : f a <= f y <= f b.
+    by apply: F; rewrite ?yI.
+    suff /andP[-> //] : f y <= f x <= f b.
+    apply: F => [|x1 x2 /itvP x1I /itvP x2I |x1 /itvP x1I|] //.
+    - by apply: fI; rewrite in_itv /= (le_trans (_ : a <= y)) !(yI, x1I,
+x2I).
+    - by apply: fC; rewrite in_itv /= (le_trans (_ : a <= y)) !(yI, x1I).
+    by rewrite yLx xI.
+  have : f x == f y -> x == y.
+    by move=> /eqP/fI-> //; rewrite in_itv /= !(xI, yI).
+  by case: (ltrgtP x y); case: (ltrgtP (f x) (f y)) => // _ _ H1 H2 H3;
+     (case: (H1 isT) || case: (H2 isT) || case: (H3 isT)).
+
 Lemma segment_injective_monotone (f : R -> R) (a b : R) :
   If f a b -> Cf f a b -> MTf f a b.
 Proof.
 move: f.
-suff F (f : R -> R) : f a <= f b -> If f a b -> Cf f a b -> Mf f a b.
+suff F (f : R -> R) : f a <= f b -> If f a b -> Cf f a b -> MTf f a b.
   move=> f fI fC.
   have [faLfb|fbLfa] : f a <= f b \/ f b <= f a.
   - by case: ltrgtP; try (by left); right.
