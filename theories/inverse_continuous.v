@@ -97,11 +97,8 @@ rewrite (fI _  _ _ _ fdEfb) ?in_itv /= ?lexx ?(itvP dI) ?aLb //.
 by rewrite (le_trans _ cLb) //  (itvP dI).
 Qed.
 
-Lemma strict_to_large_itv (a b x : R) :
-  x \in `]a, b[ -> x \in `[a, b].
-Proof.
-by rewrite !in_itv /= => /andP[aLx xLb]; rewrite !le_eqVlt aLx xLb !orbT.
-Qed.
+Lemma strict_to_large_itv (a b x : R) : x \in `]a, b[ -> x \in `[a, b].
+Proof. by rewrite !in_itv /= => /andP[A B]; rewrite !le_eqVlt A B !orbT. Qed.
 
 (* Maybe this belongs in normedtype. *)
 Lemma near_in_interval (a b : R) :
