@@ -76,90 +76,32 @@ x2I).
 have : y <= x -> f y <= f x.
   move=> yLx.
   have /andP[faLfx fxLfb] : f a <= f y <= f b.
-    by apply: F; rewrite ?yI.
-    suff /andP[-> //] : f y <= f x <= f b.
-    apply: F => [|x1 x2 /itvP x1I /itvP x2I |x1 /itvP x1I|] //.
-    - by apply: fI; rewrite in_itv /= (le_trans (_ : a <= y)) !(yI, x1I,
-x2I).
-    - by apply: fC; rewrite in_itv /= (le_trans (_ : a <= y)) !(yI, x1I).
-    by rewrite yLx xI.
-  have : f x == f y -> x == y.
-    by move=> /eqP/fI-> //; rewrite in_itv /= !(xI, yI).
-  by case: (ltrgtP x y); case: (ltrgtP (f x) (f y)) => // _ _ H1 H2 H3;
+    by apply: triplet_injective_increasing; rewrite ?yI.
+  suff /andP[-> //] : f y <= f x <= f b.
+  apply: triplet_injective_increasing
+     => [|x1 x2 /itvP x1I /itvP x2I |x1 /itvP x1I|] //.
+  - by apply: fI; rewrite in_itv /= (le_trans (_ : a <= y)) !(yI, x1I, x2I).
+  - by apply: fC; rewrite in_itv /= (le_trans (_ : a <= y)) !(yI, x1I).
+  by rewrite yLx xI.
+have : f x == f y -> x == y.
+  by move=> /eqP/fI-> //; rewrite in_itv /= !(xI, yI).
+by case: (ltrgtP x y); case: (ltrgtP (f x) (f y)) => // _ _ H1 H2 H3;
      (case: (H1 isT) || case: (H2 isT) || case: (H3 isT)).
+Qed.
 
 Lemma segment_injective_monotone (f : R -> R) (a b : R) :
   If f a b -> Cf f a b -> MTf f a b.
 Proof.
-move: f.
-suff F (f : R -> R) : f a <= f b -> If f a b -> Cf f a b -> MTf f a b.
-  move=> f fI fC.
-  have [faLfb|fbLfa] : f a <= f b \/ f b <= f a.
-  - by case: ltrgtP; try (by left); right.
-  - by left; apply: F.
-  right => x y xI yI.
-  suff : (- f) y <= (- f) x = (y <= x) by rewrite ler_oppl opprK.
-  apply: F xI => // [|x1 x2 x1I y1I U| x1 x1I].
-  - by rewrite ler_oppl opprK.
-  - by apply: fI => //; rewrite -[LHS]opprK [- f _]U opprK.
-  by apply/continuousN/fC.
-move: a b f.
-suff F (f : R -> R) (a b c : R) :
-  f a <= f b -> If f a b -> Cf f a b -> a <= c <= b -> f a <= f c <= f b.
-  move=> a b f faLfb fI fC x y /itvP xI /itvP yI.
-  have aLb : a <= b by apply: le_trans (_ : x <= b); rewrite xI.
-  have : x <= y -> f x <= f y.
-    move=> xLy.
-    have /andP[faLfx fxLfb] : f a <= f x <= f b.
-      by apply: F; rewrite ?xI.
-    suff /andP[-> //] : f x <= f y <= f b.
-    apply: F => [|x1 x2 /itvP x1I /itvP x2I |x1 /itvP x1I|] //.
-    - by apply: fI; rewrite in_itv /= (le_trans (_ : a <= x)) !(xI, x1I,
-x2I).
-    - by apply: fC; rewrite in_itv /= (le_trans (_ : a <= x)) !(xI, x1I).
-    by rewrite xLy yI.
-  have : y <= x -> f y <= f x.
-    move=> yLx.
-    have /andP[faLfx fxLfb] : f a <= f y <= f b by apply: F; rewrite ?yI.
-    suff /andP[-> //] : f y <= f x <= f b.
-    apply: F => [|x1 x2 /itvP x1I /itvP x2I |x1 /itvP x1I|] //.
-    - by apply: fI; rewrite in_itv /= (le_trans (_ : a <= y)) !(yI, x1I,
-x2I).
-    - by apply: fC; rewrite in_itv /= (le_trans (_ : a <= y)) !(yI, x1I).
-    by rewrite yLx xI.
-  have : f x == f y -> x == y.
-    by move=> /eqP/fI-> //; rewrite in_itv /= !(xI, yI).
-  by case: (ltrgtP x y); case: (ltrgtP (f x) (f y)) => // _ _ H1 H2 H3;
-     (case: (H1 isT) || case: (H2 isT) || case: (H3 isT)).
-move=> faLfb fI fC /andP[aLc cLb].
-have aLb : a <= b  by apply: le_trans cLb.
-have cIab : c \in `[a,b] by rewrite in_itv /= aLc.
-have acIab d : d \in `[a,c] -> d \in `[a,b].
-  by move=> /itvP dI; rewrite in_itv /= (le_trans _ cLb) // dI.
-have cbIab d : d \in `[c,b] -> d \in `[a,b].
-  by move=> /itvP dI; rewrite in_itv /= (le_trans aLc) // dI.
-case: (ltrgtP (f a) (f c)) => /= [faLfc|fcLfa|faEfc]; last first.
-- by rewrite -(fI _  _ _ _ faEfc) // in_itv /= lexx.
-- case: (ltrgtP (f b) (f c))=> /= [fbLfc|fcLfb|fbEfc]; last first.
-  + by move: fcLfa; rewrite -fbEfc ltNge faLfb.
-  + have [d dI]: exists2 d, d \in `[c, b] & f d = f a.
-      apply: IVT => //; first by move=> d dIab; apply/fC/cbIab.
-      by case: ltrgtP fcLfb => // _ _; rewrite ltW.
-    move=> fdEfa; move: fcLfa.
-    have : a <= c <= d by rewrite aLc  (itvP dI).
-    rewrite (fI _  _ _ _ fdEfa) ?in_itv /= ?lexx ?(itvP dI) //.
-      by case: (ltrgtP a) => // ->; rewrite ltxx.
-    by rewrite (le_trans aLc) //  (itvP dI).
-  by have := lt_trans fbLfc fcLfa; rewrite ltNge faLfb.
-case: (ltrgtP (f b) (f c))=> //= fbLfc.
-have [d dI]: exists2 d, d \in `[a, c] & f d = f b.
-  apply: IVT => //; first by move=> d dIab; apply/fC/acIab.
-  by case: ltrgtP faLfc; rewrite // faLfb // ltW.
-move=> fdEfb; move: fbLfc.
-have : d <= c <= b by rewrite cLb  (itvP dI).
-rewrite (fI _  _ _ _ fdEfb) ?in_itv /= ?lexx ?(itvP dI) ?aLb //.
-  by case: (ltrgtP b) => //= ->; rewrite ltxx.
-by rewrite (le_trans _ cLb) //  (itvP dI).
+move=> fI fC.
+have [faLfb|fbLfa] : f a <= f b \/ f b <= f a.
+- by case: ltrgtP; try (by left); right.
+- by left; apply: segment_injective_increasing.
+right => x y xI yI.
+suff : (- f) y <= (- f) x = (y <= x) by rewrite ler_oppl opprK.
+apply: segment_injective_increasing xI => // [|x1 x2 x1I y1I U| x1 x1I].
+- by rewrite ler_oppl opprK.
+- by apply: fI => //; rewrite -[LHS]opprK [- f _]U opprK.
+by apply/continuousN/fC.
 Qed.
 
 Lemma strict_to_large_itv (a b x : R) : x \in `]a, b[ -> x \in `[a, b].
@@ -191,47 +133,23 @@ rewrite (near_shift y 0); near=> z; rewrite /= sub0r subrK; near: z.
 by rewrite near_simpl; apply: near_in_interval.
 Grab Existential Variables. all: end_near. Qed.
 
-Lemma inverse_monotone (a b : R) (f g : R -> R) :
-  a < b ->
+Lemma left_inverse_increasing (a b : R) (f g : R -> R) :
+  a < b -> f a <= f b ->
   {in `[a, b], continuous f} ->
   {in `[a, b], cancel f g} ->
-  MTf g (Num.min (f a) (f b)) (Num.max (f a) (f b)).
+  Mf g (f a) (f b).
 Proof.
-move=> aLb ctf fK.
+move=> aLb faLfb ctf fK.
 have aab : a \in `[a, b] by rewrite in_itv /= lexx ltW.
 have bab : b \in `[a, b] by rewrite in_itv /= lexx andbT ltW.
 have fanfb : f a != f b.
   by apply/eqP=> fafb; move: (aLb); rewrite -(fK a) // fafb (fK b) // ltxx.
-wlog incr : f g ctf fK fanfb/ Mf f a b.
-  move=> main.
-  have ijf : If f a b by move=> x y xin yin fq; rewrite -(fK x) ?fq ?(fK y).
-  case: (segment_injective_monotone ijf ctf) => monf.
-    by apply: (main _ _ ctf fK fanfb monf).
-  have monof : Mf (-%R \o f)  a b.
-    by move=> x y xin yin; rewrite ler_oppl opprK; apply: monf.
-  have ofK : {in `[a, b], cancel (-%R \o f) (g \o -%R)}.
-    by move=> x xin; rewrite /= opprK; apply: fK.
-  have ctof : {in `[a, b], continuous (-%R \o f)}.
-    by move=> x ?; apply: continuous_comp;[apply: ctf | apply: opp_continuous].
-  have ofanofb : -f a != - f b by rewrite (inj_eq oppr_inj).
-  have faLfb : f b < f a.
-    by rewrite lt_neqAle monf ?in_itv //= ltW ?andbT // eq_sym.
-  case: (main _ _ ctof ofK ofanofb monof)=> monog.
-    right; move=> x y xin yin; rewrite -(opprK y) ler_oppl.
-    rewrite -[X in (g X <= _) = _](opprK x).
-    have := monog (-x) (-y); rewrite /= -oppr_max -oppr_min.
-    case: (ltrgtP (f b) (f a)) (faLfb) xin yin=> _ _ // xin yin.
-    by apply; rewrite oppr_itv /= !opprK.
-  left; move=> x y xin yin; rewrite -(opprK y) ler_oppr.
-    rewrite -[X in (g X <= _) = _](opprK x).
-  have := monog (- x) (-y); rewrite /= -oppr_max -oppr_min.
-  case: (ltrgtP (f b) (f a)) (faLfb) xin yin=> _ _ // xin yin.
-  by apply; rewrite oppr_itv /= !opprK.
-left.
-have faLfb : f a < f b.
-  by rewrite lt_neqAle fanfb incr // ltW.
-move=> x y; case: (ltrgtP (f a) (f b)) (faLfb)=> // _ _ xin yin.
-have := IVT (ltW aLb) ctf; case: (ltrgtP (f a) (f b)) (faLfb)=> // _ _ ivt.
+have ijf : If f a b by move=> x y xin yin fq; rewrite -(fK x) ?fq ?(fK y).
+have incr := segment_injective_increasing faLfb ijf ctf.
+have faLfb' : f a < f b.
+  by rewrite lt_neqAle fanfb faLfb.
+move=> x y xin yin.
+have := IVT (ltW aLb) ctf; case: (ltrgtP (f a) (f b)) (faLfb')=> // _ _ ivt.
 case: (ivt _ xin) => [u uin fux]; case: (ivt _ yin) => [v vin fvy].
 by rewrite -fvy -fux; apply/esym; rewrite !fK //; apply: incr.
 Qed.
@@ -244,8 +162,8 @@ Lemma interval_injective_continuous_bijective (a b : R) (f g : R -> R) :
  {in `[(f a), (f b)], cancel g f}.
 Proof.
 move=> aLb ctf monf fK y yin.
-have faLfb : f a <= f b by rewrite monf ?in_itv /= ?lexx ltW.
-have := IVT (ltW aLb) ctf; case: (lerP (f a) (f b)) (faLfb)=> // _ _=> ivt.
+have faLfb' : f a <= f b by rewrite monf ?in_itv /= ?lexx ltW.
+have := IVT (ltW aLb) ctf; case: (lerP (f a) (f b)) (faLfb')=> // _ _=> ivt.
 by case: (ivt _ yin)=> x xin <-; rewrite fK.
 Qed.
   
@@ -355,33 +273,16 @@ rewrite ltNge monf -?ltNge //; first by rewrite in_itv /= (ltW aLgy) (ltW gyLb).
 rewrite in_itv /= aLgyme /= (le_trans _ (ltW gyLb)) // ltW //.
 Grab Existential Variables.  all:end_near. Qed.
 
-Lemma inverse_continuous (a b : R) (f g : R -> R) : a < b ->
+Lemma inverse_increasing_continuous (a b : R) (f g : R -> R) : a < b ->
+  f a <= f b ->
   {in `[a, b], continuous f} ->
   {in `[a, b], cancel f g} ->
-  {in `](Num.min (f a) (f b)), (Num.max (f a) (f b))[, continuous g}.
+  {in `](f a), (f b)[, continuous g}.
 Proof.
-move=> aLb.
-wlog faLfb : f g / f a < f b.
-  case: (ltrgtP (f a) (f b)); last 1 first.
-  - by move=> _ _ _ _ y; rewrite in_itv /=; case: (ltrgtP (f a) y).
-  - move=> faLfb main; move: {main} (main _ g faLfb).
-    by case: (ltrP (f a) (f b)) faLfb.
-  move=> fbLfa /(_ (-%R \o f) (g \o -%R)) main ctf fK.
-   have ctf' : {in `[a, b], continuous (-%R \o f)}.
-    move=> x xin.
-    by apply: continuous_comp;[apply ctf | apply: opp_continuous].
-  have fK' : {in `[a, b], cancel (-%R \o f)(g \o -%R)}.
-    by move=> x; rewrite /= opprK; exact: fK.
-  suff ct_gopp : {in `](-f a), (-f b)[, continuous (g \o -%R)}.
-    rewrite (_ : g = (g \o -%R) \o -%R); last first.
-      by apply: funext => x; rewrite /= opprK.
-    move=> x xin; apply: continuous_comp.
-      by rewrite forE; apply: opp_continuous.
-    rewrite forE; apply: ct_gopp.
-    by rewrite oppr_itvoo !opprK.
-  move=> x xin; apply: main => //; first by rewrite /= ltr_oppr opprK.
-  by rewrite /= -oppr_min -oppr_max; case: (ltrgtP (f b) (f a)) (fbLfa).
-case: (ltrP (f a) (f b)) (faLfb)=> // _ _ ctf fK.
+move=> aLb faLfb' ctf fK.
+have faLfb : f a < f b.
+  rewrite lt_neqAle faLfb' andbT; apply/eqP=> fafb.
+  by move: (aLb); rewrite -(fK a) ?fafb ?fK ?ltxx // ?in_itv /= lexx (ltW aLb).
 have ivt : {in `](f a), (f b)[, forall y, exists2 x, a < x < b & y = f x}.
   move=> y yin.
   have yin' : y \in `[(f a), (f b)] by rewrite strict_to_large_itv.
@@ -397,11 +298,7 @@ have ifab : If f a b.
 have [incrf | abs] := segment_injective_monotone ifab ctf; last first.
   move: (abs a b); rewrite !in_itv /= !lexx ltW // ltW // leNgt aLb.
   by move=> /(_ isT isT).
-have := inverse_monotone aLb ctf fK.
-case: (ltrgtP (f a) (f b)) (faLfb) => // _ _ => [] [incrg | abs]; last first. 
-  move: (aLb); rewrite ltNge -(fK b) ?in_itv /= ?lexx ?(ltW aLb) //.
-  rewrite -(fK a) ?in_itv /= ?lexx ?(ltW aLb) //.
-  by rewrite abs ?(ltW faLfb) // in_itv /= lexx (ltW faLfb).
+have incrg := left_inverse_increasing aLb faLfb' ctf fK.
 have gK := interval_injective_continuous_bijective aLb ctf incrf fK.
 by apply: monotone_surjective_continuous.
 Qed.
@@ -441,8 +338,27 @@ have ifx : If f (x - e'') (x + e'').
   by move=> v w vin win fq; rewrite -(fK' v) // fq fK'.
 have cmp1 : x - e'' < x by rewrite ltr_subl_addr ltr_addl.
 have cmp2 : x < x + e'' by rewrite ltr_addl.
-have fxin : f x \in `](Num.min (f (x - e'')) (f (x + e''))),
-               (Num.max (f (x - e'')) (f (x + e'')))[.
+have xmeLxpe : x - e'' < x + e'' by rewrite (lt_trans cmp1).
+wlog fxmeLfxpe : f fK' ctf' ifx {fK ctf}/ f (x - e'') <= f (x + e'').
+  move=> main.  
+  case: (lerP (f (x - e'')) (f (x + e''))) => [fxmeLfxpe | /ltW fxpeLfxme].
+    by apply: (main _ fK' ctf' ifx fxmeLfxpe).
+  have ofxmeLofxpe : - f (x - e'') <= - f (x + e'') by rewrite ler_oppl opprK.
+  have ofK :  {in `[(x - e''), (x + e'')], cancel (-%R \o f) (g \o -%R)}.
+    by move=> u uin; rewrite /= opprK fK'.
+  have ctof : Cf (-%R \o f) (x - e'') (x + e'').
+    move=> u uin; apply continuous_comp; first by apply: ctf'.
+    by apply: opp_continuous.
+  have iofx : If (-%R \o f) (x - e'') (x + e'').
+    by move=> u v uin vin; rewrite /= => /oppr_inj; apply: ifx.
+  have monof :=
+     segment_injective_increasing (f := -%R \o f) ofxmeLofxpe iofx ctof.
+  have ctgo := inverse_increasing_continuous
+             (f := (-%R \o f)) xmeLxpe ofxmeLofxpe ctof ofK.
+  near=> y; rewrite -(opprK y).
+  
+  have fxin : f x \in `](-f (x - e'')), (-f (x + e''))[.
+    have := cmp1; rewrite ltNge .
   have [incr | decr] := segment_injective_monotone ifx ctf'.
     have := cmp1; rewrite ltNge -incr; first 1 last.
         by rewrite in_itv /= !ltW.
