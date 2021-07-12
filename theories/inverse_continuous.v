@@ -349,8 +349,8 @@ Proof.
 (* The first 3 lines to get the left inverse propoerty and the continuity    *)
 (* in the same ball, and transform this ball into an interval, and have      *)
 (* the two properties separately.                                            *)
-move=> fK ctf; have := conj fK ctf => {fK ctf}.
-rewrite -(near_andP (F := nbhs x)) near_simpl.
+move=> fK ctf; have /(proj1 (and_comm _ _) (near_andP _ _ _)) :=
+  conj fK ctf => {fK ctf}.
 case=> [e' e'gt0]/subset_ball_prop_in_itv/prop_in_and [fK ctf].
 (* We then need a non-singleton closed interval containing x inside the      *)
 (* ball.                                                                     *)
@@ -414,6 +414,14 @@ Lemma inverse_swap_continuous  (f g : R -> R) (x : R) :
   {near x, cancel f g} -> {near x, continuous f} -> {near (f x), cancel g f}.
 Proof. by move=> fK ctf; case: (continuous_inverse_main fK ctf). Qed.
 
+Lemma sqr_continuous : continuous (exprz (R := R) ^~ 2).
+Proof.
+move => x s.
+rewrite (_ : (fun x => x ^ 2) = fun x : R => x * x); last first.
+  by  apply: funext=> y; rewrite exprSz expr1z.
+by rewrite exprSz expr1z; apply: continuousM.
+Qed.
+
 Lemma sqrt_continuous : continuous (@Num.sqrt R).
 Proof.
 move=> x.
@@ -422,20 +430,19 @@ case: (ltrgtP x 0) => [xlt0 | xgt0 | ->].
   rewrite (near_shift 0 x).
   near=> z; rewrite subr0 /=; apply: ltr0_sqrtr.
   rewrite -(opprK x) subr_lt0; apply: ltr_normlW.
-  by near: z; apply: nbhs0_lt; rewrite ltr_oppr oppr0.
-- have csqr bnd : 0 < bnd -> {in `[0, bnd], continuous (exprz (R := R) ^~ 2)}.
-  by move=> bndgt0 u _; apply: sqr_continuous.
-  have xp1gt0 : 0 < Num.sqrt (x + 1) by rewrite sqrtr_gt0 addr_gt0.
-  have xp1gt0' : 0 < x + 1 by rewrite addr_gt0.
-  have m01' : Num.min 0 (x + 1) = 0 by case: (ltrgtP 0 (x + 1)) xp1gt0'.
-  have M01' : Num.max 0 (x + 1) = (x + 1) by case: (ltrgtP 0 (x + 1)) xp1gt0'. 
-  have ctf := csqr _ xp1gt0.
-  apply: (inverse_continuous xp1gt0 ctf).
-  move=> u; rewrite sqrtr_sqr => uin; apply/normr_idP.
-  by rewrite (itvP uin).
-  rewrite /exprz /= ?addn1 sqr_sqrtr ?expr0n /=; last first.
-    by rewrite addr_ge0 // ltW.
-  by rewrite in_itv m01' M01' /= xgt0 cpr_add ltr01.
+- by near: z; apply: nbhs0_lt; rewrite ltr_oppr oppr0.
+  have csqr : \forall z \near Num.sqrt x,
+     {for z, continuous (exprz (R := R) ^~ 2)}.
+    by near=> z; apply: sqr_continuous.
+  have sqrtxgt0 : 0 < Num.sqrt x by rewrite sqrtr_gt0.
+  have sqrK : \forall z \near (Num.sqrt x),
+                  Num.sqrt ((exprz (R := R) ^~ 2) z) = z.
+    near=> z; rewrite sqrtr_sqr; apply/normr_idP/ltW.
+    near: z; rewrite !near_simpl (near_shift 0).
+    near=> z; rewrite /= subr0 -ltr_subl_addl sub0r ltr_normlW // normrN.
+    by near: z; apply: nbhs0_lt.
+  have := (nbhs_singleton (continuous_inverse sqrK csqr)).
+  by rewrite -exprnP sqr_sqrtr // ltW.
 apply/cvg_distP=> _ /posnumP[e]; rewrite !near_simpl /=.
 near=> y; rewrite sqrtr0 sub0r normrN.
 rewrite ger0_norm ?sqrtr_ge0 //.
@@ -444,9 +451,8 @@ have ylte2 : y < e%:num ^+ 2.
   by rewrite exprn_gt0.
 have twogt0 : (0 < 2)%N by [].
 rewrite -(ltr_pexpn2r twogt0) ?inE ?nnegrE ?ltrW ?sqrtr_ge0 //.
-have [ylt0 | ] := boolP(y < 0).
-  by rewrite ltr0_sqrtr // expr0n /= exprn_gt0.
-by rewrite -leNgt => yge0; rewrite sqr_sqrtr.
+have [ylt0 | yge0 ] := (ltrP y 0); last by rewrite sqr_sqrtr.
+by rewrite ltr0_sqrtr // expr0n /= exprn_gt0.
 Grab Existential Variables. all: end_near. Qed.
 
 End real_inverse_functions.
