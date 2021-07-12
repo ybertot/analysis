@@ -303,9 +303,37 @@ have gK := interval_injective_continuous_bijective aLb ctf incrf fK.
 by apply: monotone_surjective_continuous.
 Qed.
 
+Lemma subset_ball_prop_in_itv (x : R) e P :
+  (ball_ [eta Num.Def.normr] x e `<=` P)%classic <->
+  {in  `](x - e), (x + e)[ , forall y, P y}.
+Proof.
+split.
+  move=> bp y; rewrite in_itv/= => yin; apply: bp=> /=.
+  by rewrite distrC ltr_distl.
+by move=> inxep y /= inball; apply: inxep; rewrite in_itv/= -ltr_distl distrC.
+Qed.
+
+Lemma prop_in_and (p : mem_pred R) (P Q : R -> Prop) :
+  {in p, forall x, P x /\ Q x} <->
+  {in p, forall x, P x} /\ {in p, forall x, Q x}.
+Proof.
+split.
+  by move=> cnd; split; move=> x xin; case: (cnd x xin).
+by move=> [cnd1 cnd2] x xin; split;[apply: cnd1 | apply: cnd2].
+Qed.
+
 Lemma continuous_inverse  (f g : R -> R) (x : R) :
   {near x, cancel f g} -> {near x, continuous f} -> {near (f x), continuous g}.
 Proof.
+move=> fK ctf.
+have := conj fK ctf => {fK ctf}; rewrite -(near_andP (F := nbhs x)).
+rewrite near_simpl.
+move=> [e egt0]; rewrite subset_ball_prop_in_itv.
+rewrite (prop_in_and (mem `](x - e), (x + e)[))=> [[]].
+Check prop_near1.
+Check (prop_near1 x (inPhantom (continuous f))).
+
+
 move=> [e egt0 fK] [e' e'gt0 ctf].
 set e'' := Num.min e e' / 2.
 have e''gt0 : 0 < e''.
@@ -329,39 +357,24 @@ have cmp2 : x < x + e'' by rewrite ltr_addl.
 have cmp : x - e'' < x + e'' by rewrite (lt_trans cmp1).
 have ifx : If f (x - e'') (x + e'').
   by move=> v w vin win fq; rewrite -(fK' v) // fq fK'.
-wlog cmpf : f fK' ctf' ifx {fK ctf}/ f (x - e'') <= f (x + e'').
-  move=> main.
-  case: (lerP (f (x - e'')) (f (x + e''))) => [cmpf | /ltW fxpeLfxme].
-    by apply: (main _ fK' ctf' ifx cmpf).
-  have ofL : - f (x - e'') <= - f (x + e'') by rewrite ler_oppl opprK.
-  have ofK :  {in `[(x - e''), (x + e'')], cancel (-%R \o f) (g \o -%R)}.
-    by move=> u uin; rewrite /= opprK fK'.
-  have ctof : Cf (-%R \o f) (x - e'') (x + e'').
-    move=> u uin; apply continuous_comp; first by apply: ctf'.
-    by apply: opp_continuous.
-  have iofx : If (-%R \o f) (x - e'') (x + e'').
-    by move=> u v uin vin; rewrite /= => /oppr_inj; apply: ifx.
-  have monof :=
-     segment_injective_increasing  (f := -%R \o f) ofL iofx ctof.
-  rewrite (_ : g = (g \o -%R \o -%R)); last first.
-    by apply: funext=> u; rewrite /= opprK.
-  near=> y; rewrite /=.
-  have ctog := inverse_increasing_continuous (f := -%R \o f) cmp ofL ctof ofK.
-  have : (((g \o -%R) x)@[x --> -y] --> (g \o -%R) (-y))%classic.
-    apply: ctog; rewrite //= oppr_itvoo !opprK.
-    near: y; rewrite !near_simpl;  apply: near_in_interval.
-    rewrite -(opprK (f (_ + _))) -(opprK (f (_ - _))) -oppr_itvoo.
-    by rewrite in_itv /= !ltNge !monof ?in_itv /= ?lexx ?andbT ?(ltW cmp1)
-       ?(ltW cmp2) ?(ltW cmp) -?ltNge ?cmp1.
-  have : ((- x)@[x --> y] --> (- y))%classic by apply: opp_continuous.
-  by apply: cvg_comp.
-have ctg := inverse_increasing_continuous cmp cmpf ctf' fK'.
-near=> z; apply: ctg.
-near: z; rewrite near_simpl; apply: near_in_interval.
-have incr := segment_injective_increasing cmpf ifx ctf'.
-by rewrite in_itv /= !ltNge !incr -?ltNge ?cmp1 ?cmp2 ?in_itv /= ?lexx ?andbT
-  ?(ltW cmp) ?(ltW cmp1) ?(ltW cmp2).
+have [mfx |mfx] := segment_injective_monotone ifx ctf'.
+  near=> z; apply: inverse_increasing_continuous ctf' _ _ _ => //.
+    by rewrite mfx ?ltW // in_itv /= ?lexx ltW.
+  near: z; rewrite near_simpl; apply: near_in_interval.
+  by rewrite in_itv /= !(ltNge, mfx, in_itv) /= -?ltNge ?(lexx, cmp1, ltW).
+near=> y; rewrite -[y]opprK (_ : g = (g \o -%R \o -%R)); last first.
+  by apply: funext=> u; rewrite /= opprK.
+apply: continuous_comp; rewrite opprK; first by apply: continuousN.
+have ctNf: {in `[(x - e''), (x + e'')], continuous (- f)}.
+  by move=> z zI; apply/continuousN/ctf'.
+apply: inverse_increasing_continuous ctNf _ _ _ => //.
+- by rewrite lter_oppr opprK mfx ?ltW // in_itv /= ?lexx ltW.
+- by move=> z zI; rewrite /= opprK fK'.
+rewrite oppr_itvoo !opprK.
+near: y; rewrite near_simpl; apply: near_in_interval.
+by rewrite in_itv /= !(ltNge, mfx, in_itv) /= -?ltNge ?(lexx, cmp2, ltW).
 Grab Existential Variables. all:end_near. Qed.
+
 
 Lemma sqr_continuous : continuous (exprz (R := R) ^~ 2).
 Proof.
