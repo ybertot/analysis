@@ -322,40 +322,50 @@ split.
 by move=> [cnd1 cnd2] x xin; split;[apply: cnd1 | apply: cnd2].
 Qed.
 
+Lemma subset_prop_in1 (T : Type) (E E': mem_pred T) (P : T -> Prop):
+  {subset E <= E'} -> {in E', forall x, P x} ->
+  {in E, forall x, P x}.
+Proof. by move=> sub p' x xE; apply/p'/sub. Qed.
+
+Ltac staged_split :=
+  repeat (rewrite andb_idr;[ | move=> *]).
+
+(* This is an example that appears in the following proof.  I think
+  there could be a use case for tactic that leads the user to proving
+  a conjunction by addressing the second component with the assumption
+  that the first one already holds. *)
+Fact itv_example (x e  : R):
+  0 < e -> [&& x < x + e, x - e < x & x - e < x + e].
+Proof.
+move=> e0; staged_split;[rewrite ltr_addl // | rewrite ltr_subl_addr //| ].
+(* Unfortunately, the name of the hypotheses could be useful here. *)
+eapply lt_trans; eassumption.
+Qed.
+
 Lemma continuous_inverse  (f g : R -> R) (x : R) :
   {near x, cancel f g} -> {near x, continuous f} -> {near (f x), continuous g}.
 Proof.
-move=> fK ctf.
-have := conj fK ctf => {fK ctf}; rewrite -(near_andP (F := nbhs x)).
-rewrite near_simpl.
-move=> [e egt0]; rewrite subset_ball_prop_in_itv.
-rewrite (prop_in_and (mem `](x - e), (x + e)[))=> [[]].
-Check prop_near1.
-Check (prop_near1 x (inPhantom (continuous f))).
-
-
-move=> [e egt0 fK] [e' e'gt0 ctf].
-set e'' := Num.min e e' / 2.
-have e''gt0 : 0 < e''.
-  by apply: divr_gt0; [rewrite /Num.min; case: ifP | rewrite ltr0Sn].
-have [e''lte e''lte'] : e'' < e /\ e'' < e'.
-  have e''lt2 : e'' < e'' + e'' by rewrite ltr_addl //.
-  rewrite !(lt_le_trans e''lt2) // /e'' -mulrDl (le_trans (midf_le _).2) //;
-    by case: (lerP e e') => // strict; rewrite ltW.
-have fK' : {in `[x - e'', x + e''], cancel f g}.
-  move=> y; rewrite in_itv /= => /andP [yin1 yin2]; apply: fK=> /=.
-  rewrite -opprB normrN real_ltr_distl ?num_real // (lt_le_trans _ yin1) /=.
-    by rewrite (le_lt_trans yin2) // ltr_add2.
-  by rewrite ltr_add2 ltr_oppl opprK.
-have ctf' : {in `[x - e'', x + e''], continuous f}.
-  move=> y; rewrite in_itv /= => /andP [yin1 yin2]; apply: ctf => /=.
-  rewrite -opprB normrN real_ltr_distl ?num_real // (lt_le_trans _ yin1) /=.
-    by rewrite (le_lt_trans yin2) // ltr_add2.
-  by rewrite ltr_add2 ltr_oppl opprK.
-have cmp1 : x - e'' < x by rewrite ltr_subl_addr ltr_addl.
-have cmp2 : x < x + e'' by rewrite ltr_addl.
-have cmp : x - e'' < x + e'' by rewrite (lt_trans cmp1).
-have ifx : If f (x - e'') (x + e'').
+(* The first 3 lines to get the left inverse and the continuity in the       *)
+(*  same ball, and then transform this ball into an interval.                *)
+move=> fK ctf; have := conj fK ctf => {fK ctf}.
+rewrite -(near_andP (F := nbhs x)) near_simpl.
+case=> [e' e'gt0]/subset_ball_prop_in_itv/prop_in_and [fK ctf].
+(* We then need a non-singleton closed interval containing x inside the      *)
+(* ball.                                                                     *)
+set e := e' / 2.
+have e0 : 0 < e by apply: divr_gt0.
+have elte' : e < e'.
+  by rewrite (@ltr_pdivr_mulr _ 2) // !mulr_natr mulrS mulr1n ltr_addl.
+have itvsub  : {subset `[(x - e), (x + e)] <=  `](x - e'), (x + e')[}.
+  apply/subitvP.
+  by rewrite subitvE /Order.le /= !ltr_add2l ltr_oppl opprK elte'.
+have fK' : {in `[x - e, x + e], cancel f g}.
+  by apply/(subset_prop_in1 itvsub fK).
+have ctf' : {in `[x - e, x + e], continuous f}.
+  by apply/(subset_prop_in1 itvsub ctf).
+have /and3P[cmp2 [cmp1 cmp]] : [&& x < x + e, x - e < x & x - e < x + e].
+  by rewrite !(ltr_subl_addr, ltr_addl, ltr_spsaddr) e0.
+have ifx : If f (x - e) (x + e).
   by move=> v w vin win fq; rewrite -(fK' v) // fq fK'.
 have [mfx |mfx] := segment_injective_monotone ifx ctf'.
   near=> z; apply: inverse_increasing_continuous ctf' _ _ _ => //.
@@ -365,7 +375,7 @@ have [mfx |mfx] := segment_injective_monotone ifx ctf'.
 near=> y; rewrite -[y]opprK (_ : g = (g \o -%R \o -%R)); last first.
   by apply: funext=> u; rewrite /= opprK.
 apply: continuous_comp; rewrite opprK; first by apply: continuousN.
-have ctNf: {in `[(x - e''), (x + e'')], continuous (- f)}.
+have ctNf: {in `[(x - e), (x + e)], continuous (- f)}.
   by move=> z zI; apply/continuousN/ctf'.
 apply: inverse_increasing_continuous ctNf _ _ _ => //.
 - by rewrite lter_oppr opprK mfx ?ltW // in_itv /= ?lexx ltW.
