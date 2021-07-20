@@ -20,11 +20,6 @@ Let Cf (f : R -> R) a b := {in `[a, b], continuous f}.
 Let If (f : R -> R) a b := {in `[a, b] &, injective f}.
 Let Mf (f : R -> R) a b := {in `[a, b] &, {mono f : x y / x <= y}}.
 
-Lemma subset_prop_in1 (T : Type) (E E': mem_pred T) (P : T -> Prop):
-  {subset E <= E'} -> {in E', forall x, P x} ->
-  {in E, forall x, P x}.
-Proof. by move=> sub p' x xE; apply/p'/sub. Qed.
-
 Lemma itvlc (a b : R) : (a \in `[a, b]) = (a <= b).
 Proof.  by rewrite in_itv /= lexx. Qed.
 
@@ -99,8 +94,8 @@ have stepper_main (f : R -> R) (a c b : R) :
     have [d dI fdEfb] : exists2 d, d \in `[a, c] & f d = f b.
       have aLc' : a <= c by rewrite ltW.
       apply: IVT => //; last first.
-       by case: ltrgtP faLfc; rewrite // (ltW faLfb) // ltW.
-      by apply: subset_prop_in1 fC; rewrite itvcc_sub ?aI.
+        by case: ltrgtP faLfc; rewrite // (ltW faLfb) // ltW.
+      by apply: sub_in1 fC; rewrite itvcc_sub ?aI.
     suff <- : d = b by rewrite (itvP dI).
     by apply: fI fdEfb => //; rewrite (subitvP acI).
   - have [fbLfc | fcLfb | fbEfc] /= := ltrgtP (f b) (f c).
@@ -108,7 +103,7 @@ have stepper_main (f : R -> R) (a c b : R) :
     + have [d dI /eqP] : exists2 d, d \in `[c, b] & f d = f a.
         have cLb' : c <= b by rewrite ltW.
         apply: IVT => //; last by case: ltrgtP fcLfb; rewrite // !ltW.
-        by apply: subset_prop_in1 fC; apply/subitvP.
+        by apply: sub_in1 fC; apply/subitvP.
       have /fxy : a < d by rewrite (lt_le_trans aLc) ?(itvP dI).
       by rewrite eq_sym => /(_ aI (interval_connected_le dI _ _)) /negbTE ->.
     + by move: fcLfa; rewrite -fbEfc ltNge (ltW faLfb).
@@ -459,9 +454,9 @@ have itvsub  : {subset `[(x - e), (x + e)] <= `](x - e'), (x + e')[}.
   apply/subitvP.
   by rewrite subitvE /Order.le /= !ltr_add2l ltr_oppl opprK elte'.
 have fK' : {in `[x - e, x + e], cancel f g}.
-  by apply/(subset_prop_in1 itvsub fK).
+  by apply/(sub_in1 itvsub fK).
 have ctf' : {in `[x - e, x + e], continuous f}.
-  by apply/(subset_prop_in1 itvsub ctf).
+  by apply/(sub_in1 itvsub ctf).
 have /and3P[cmp2 [cmp1 cmp]] : [&& x < x + e, x - e < x & x - e < x + e].
   by rewrite !(ltr_subl_addr, ltr_addl, ltr_spsaddr) e0.
 have ifx : If f (x - e) (x + e).
