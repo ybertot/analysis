@@ -40,13 +40,6 @@ by move=> C; case: I => [[[] l| []] [[|] u| [|]]];
   rewrite ?(le_trans C) ?(le_trans _ C) ?(lt_le_trans _ C) ?(le_lt_trans C).
 Qed.
 
-Lemma itvcc_sub (x y : R) (I : interval R) :
-  x <= y -> {subset `[x, y] <= I} <-> ((x \in I) && (y \in I)).
-Proof.
-move=> xLy; split=> asm; last by apply/subitvP; rewrite itvcc_le.
-by apply/andP; split; rewrite asm // bound_in_itv.
-Qed.
-
 (* This is just an example showing hot to use interval_is_interval
   in the case of a large comparisons. the lemma is not used otherwise. *)
 Lemma interval_connected_le (I : interval R) (a b c : R) :
@@ -84,7 +77,9 @@ have stepper_main (f : R -> R) (a c b : R) :
       have aLc' : a <= c by rewrite ltW.
       apply: IVT => //; last first.
         by case: ltrgtP faLfc; rewrite // (ltW faLfb) // ltW.
-      by apply: sub_in1 fC; rewrite itvcc_sub ?aI.
+      apply: sub_in1 fC => y; rewrite in_itv /= !le_eqVlt => /andP[].
+      move=> /orP[/eqP <- | L] /orP[/eqP -> | ?] //.
+      by rewrite (interval_is_interval aI cI) ?L.
     suff <- : d = b by rewrite (itvP dI).
     by apply: fI fdEfb => //; rewrite (subitvP acI).
   - have [fbLfc | fcLfb | fbEfc] /= := ltrgtP (f b) (f c).
