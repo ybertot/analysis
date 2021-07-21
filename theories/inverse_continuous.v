@@ -20,56 +20,45 @@ Let Cf (f : R -> R) a b := {in `[a, b], continuous f}.
 Let If (f : R -> R) a b := {in `[a, b] &, injective f}.
 Let Mf (f : R -> R) a b := {in `[a, b] &, {mono f : x y / x <= y}}.
 
-Lemma itvlc (a b : R) : (a \in `[a, b]) = (a <= b).
-Proof.  by rewrite in_itv /= lexx. Qed.
-
-Lemma itvcr (a b : R) : (b \in `[a, b]) = (a <= b).
-Proof. by rewrite in_itv /= lexx andbT. Qed.
+(* multi-rule bound_in_itv already exists in interval.v, but we
+  advocate that it should actually have the following statement.
+  This does not expose the order between interval bounds. *)
+Lemma bound_in_itv (a b : R): ((a \in `[a, b]) = (a <= b)) *
+                     ((b \in `[a, b]) = (a <= b)) *
+                     ((a \in `[a, b[) = (a < b)) *
+                     ((b \in `]a, b]) = (a < b)) *
+                     (a \in `[a, +oo[ ) *
+                     (a \in `]-oo, a]).
+Proof. by rewrite !(boundr_in_itv, boundl_in_itv). Qed.
 
 Lemma itvcc_le (x y : R) (I : interval R) :
-  x <= y ->
-  (`[x, y] <= I)%O = ((x \in I) && (y \in I)).
+  x <= y -> (`[x, y] <= I)%O = ((x \in I) && (y \in I)).
 Proof.
-move=> xLy.
-apply/idP/idP.
-  case: I => [[b1 lb| b] [b2 ub| b']]; rewrite !subitvE /Order.le /=
-   !in_itv /=.
-  - move=> /andP[xl yu]; rewrite xl yu; case: b1 xl; case: b2 yu=> /= yu xl.
-    + by rewrite (le_lt_trans xLy _) // (le_trans xl).
-    + by rewrite (le_trans xLy) // (le_trans xl).
-    + by rewrite (le_lt_trans xLy) // (lt_le_trans _ xLy).
-    by rewrite (le_trans xLy) // (lt_le_trans _ xLy).
-  - case: b'; move=>/andP[xl yu] //; rewrite xl {yu}.
-    by case: b1 xl=> /= xl; rewrite ?(le_trans _ xLy) ?(lt_le_trans _ xLy).
-  - case: b => //=; case: b2 => /= yu; rewrite yu ?(le_lt_trans xLy) //.
-    by rewrite (le_trans xLy).
-  - by case: b; case: b'.
-case: I => [[b1 lb| b] [b2 ub| b']]; rewrite !subitvE /Order.le /=
-   !in_itv /=.
-- by case: b1; case:b2=> /= /andP[/andP[-> _] /andP[_ ->]].
-- by case: b'; case: b1; rewrite /= ?andbF //; move/andP=> [/andP[] -> ].
-- by case: b; case: b2; rewrite /= ?andbF //; move/andP=> [] _ ->.
-by case: b; case: b'.
+by move=> C; case: I => [[[] l| []] [[|] u| [|]]];
+  rewrite !subitvE ?in_itv -?andbA //=; apply/idP/idP;
+  repeat (move/andP=>[] ?); move=> ?; repeat (apply/andP; split=> //);
+  rewrite ?(le_trans C) ?(le_trans _ C) ?(lt_le_trans _ C) ?(le_lt_trans C).
 Qed.
 
-Lemma itvcc_sub (x y : R) (I : interval R) : x <= y ->
-  {subset `[x, y] <= I} <-> ((x \in I) && (y \in I)).
+Lemma itvcc_sub (x y : R) (I : interval R) :
+  x <= y -> {subset `[x, y] <= I} <-> ((x \in I) && (y \in I)).
 Proof.
-move=> xLy; split.
-  by move=> itvI; apply/andP; split; apply itvI; rewrite ?itvlc ?itvcr.
-by move=> xIyI; apply/subitvP; rewrite itvcc_le.
+move=> xLy; split=> asm; last by apply/subitvP; rewrite itvcc_le.
+by apply/andP; split; rewrite asm // bound_in_itv.
 Qed.
 
+(* This is just an example showing hot to use interval_is_interval
+  in the case of a large comparisons. the lemma is not used otherwise. *)
 Lemma interval_connected_le (I : interval R) (a b c : R) :
-  a <= c <= b ->  a \in I -> b \in I -> c \in I.
+  a \in I -> b \in I -> a <= c <= b -> c \in I.
 Proof.
-move=> /andP[aLc cLb] aI bI.
-have /subitvP : (`[a, b] <= I)%O by rewrite itvcc_le ?aI ?(le_trans aLc cLb).
-by apply; rewrite in_itv/= ?aLc.
+move=> aI bI; rewrite !le_eqVlt.
+move=> /andP[] /orP[/eqP <- // | aLc] /orP [/eqP -> // | cLb].
+by rewrite (interval_is_interval aI bI) ?aLc.
 Qed.
 
 Lemma continuous_inj_le_itv (f : R -> R) (I : interval R) :
-  (exists x y, x \in I /\ y \in I /\ x < y /\ f x <= f y) ->
+  (exists x y, (x \in I) && (y \in I) && (x < y) && (f x <= f y)) ->
   {in I, continuous f} -> {in I &, injective f} ->
   {in I &, {mono f : x y / x <= y}}.
 Proof.
@@ -78,7 +67,7 @@ have stepper_main (f : R -> R) (a c b : R) :
   {in I, continuous f} -> {in I &, injective f} ->
   f a < f b -> a \in I -> b \in I -> a < c -> c < b -> f a < f c  /\ f c < f b.
   move=> fC fI faLfb aI bI aLc cLb.
-  have cI : c \in I by rewrite (@interval_connected_le _ a b) // !ltW ?aLc.
+  have cI : c \in I by apply: (interval_is_interval aI bI); rewrite aLc.
   have [aLb alb'] : a < b /\ a <= b by rewrite ltW (lt_trans aLc).
   have fxy x y : x\in I -> y\in I -> x < y -> f x != f y.
     move=> xI yI xLy; apply/negP=> /eqP /fI => /(_ xI yI) xy.
@@ -100,15 +89,18 @@ have stepper_main (f : R -> R) (a c b : R) :
     by apply: fI fdEfb => //; rewrite (subitvP acI).
   - have [fbLfc | fcLfb | fbEfc] /= := ltrgtP (f b) (f c).
     + by have := lt_trans fbLfc fcLfa; rewrite ltNge (ltW faLfb).
-    + have [d dI /eqP] : exists2 d, d \in `[c, b] & f d = f a.
+    + have [d /andP[cLd dLb] /eqP] : exists2 d, c <= d <= b & f d = f a.
         have cLb' : c <= b by rewrite ltW.
         apply: IVT => //; last by case: ltrgtP fcLfb; rewrite // !ltW.
         by apply: sub_in1 fC; apply/subitvP.
-      have /fxy : a < d by rewrite (lt_le_trans aLc) ?(itvP dI).
-      by rewrite eq_sym => /(_ aI (interval_connected_le dI _ _)) /negbTE ->.
+      have /fxy : a < d by rewrite (lt_le_trans aLc).
+      have dI' : d \in I.
+        move: cLd dLb; rewrite !le_eqVlt=> /orP[/eqP<- | cd]/orP[/eqP->|?] //.
+        by rewrite (interval_is_interval cI bI) ?cd.
+      by rewrite eq_sym=> /(_ aI dI') => /negbTE ->.
     + by move: fcLfa; rewrite -fbEfc ltNge (ltW faLfb).
   by move/fxy: aLc=> /(_ aI cI); rewrite faEfc.
-move=> f [u [v [uI [vI [ulv fuLfv]]]]] fC fI.
+move=> f [u [v /andP [/andP [ /andP [uI vI] ulv] fuLfv]]] fC fI.
 move: fuLfv; rewrite le_eqVlt=> /orP[/eqP fufv | fuLfv].
   by move/fI: fufv => /(_ uI vI) uv; move: ulv; rewrite uv ltxx.
 have tid a c b:
@@ -117,7 +109,7 @@ have tid a c b:
   have ofI : {in I &, injective (-f)} by move=> x y xin yin /oppr_inj/fI ->.
   move=> fbLfa aI bI aLc cLb.
   have aLb : a < b by apply: (lt_trans aLc).
-  have cI : c \in I by rewrite (@interval_connected_le _ a b) // !ltW ?aLc.
+  have cI : c \in I by rewrite (interval_is_interval aI bI) ?aLc.
   have fanfc : f a != f c.
     by apply/eqP=> /fI => /(_ aI cI)=> abs; move: aLc; rewrite abs ltxx.
   have fcnfb : f c != f b.
@@ -129,7 +121,7 @@ have tii a c b := stepper_main f a c b fC fI; move=> {stepper_main fC}.
 have tii1 a c b : f a < f c -> a \in I -> b \in I ->
        a < c -> c < b -> f a < f b /\ f c < f b.
   move=> faLfc aI bI aLc cLb; suff faLfb : f a < f b.
-    have cI : c \in I by rewrite (@interval_connected_le _ a b) ?ltW ?aLc.
+    have cI : c \in I by rewrite (interval_is_interval aI bI) ?aLc.
     split; first by [].
     by have [] := tii a c b faLfb aI bI aLc cLb.
   rewrite lt_neqAle (_ : f a != f b) /=; last first.
@@ -140,7 +132,7 @@ have tii1 a c b : f a < f c -> a \in I -> b \in I ->
 have tii2 a c b : f c < f b -> a \in I -> b \in I ->
      a < c -> c < b -> f a < f b /\ f a < f c.
   move=> fcLfb aI bI aLc cLb; suff faLfb : f a < f b.
-  have cI : c \in I by rewrite (@interval_connected_le _ a b) ?ltW ?aLc.
+  have cI : c \in I by rewrite (interval_is_interval aI bI) ?aLc.
   split; first by [].
   by have [] := tii a c b faLfb aI bI aLc cLb.
   rewrite lt_neqAle (_ : f a != f b) /=; last first.
@@ -178,7 +170,7 @@ Lemma continuous_inj_le_itvcc (f : R -> R) (a b : R) :
 Proof.
 case: (ltrgtP a b)=> [aLb | bLa | ab].
 - move=> faLfb fC fI; apply: continuous_inj_le_itv => //.
-  by exists a, b; rewrite itvlc itvcr faLfb !ltW.
+    by exists a, b; rewrite !bound_in_itv faLfb !ltW aLb.
 - move=> _ _ _ x y; rewrite in_itv /= => /andP[aLx xLb]; move: bLa.
   by rewrite ltNge (le_trans aLx).
 move=> _ _ _ x y; rewrite !in_itv /= -ab=> /le_anti -> /le_anti ->.
@@ -238,7 +230,7 @@ Lemma left_inverse_increasing (a b : R) (f g : R -> R) :
   {in `[(f a), (f b)] &, {mono g : x y / x <= y}}.
 Proof.
 move=> aLb faLfb ctf fK.
-have [aab bab] : a \in `[a, b] /\ b \in `[a, b] by rewrite itvlc itvcr ltW.
+have [aab bab] : a \in `[a, b] /\ b \in `[a, b] by rewrite !bound_in_itv ltW.
 have fanfb : f a != f b.
   by apply/eqP=> fafb; move: (aLb); rewrite -(fK a) // fafb (fK b) // ltxx.
 have ijf : If f a b by move=> x y xin yin fq; rewrite -(fK x) ?fq ?(fK y).
