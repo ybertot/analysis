@@ -164,6 +164,21 @@ case: (ltrgtP y v)=> [yLv | vLy | -> //].
 by have [] := tii1 u v y fuLfv uI yI ulv vLy.
 Qed.
 
+Lemma continuous_inj_ge_itv (f : R -> R) (I : interval R) :
+  (exists x y, (x \in I) && (y \in I) && (x < y) && (f y <= f x)) ->
+  {in I, continuous f} -> {in I &, injective f} ->
+  {in I &, {mono f : x y /~ x <= y}}.
+Proof.
+move=> witness fC fI.
+have wit' : exists x y, (x \in I) && (y \in I) && (x < y) && (- f x <= - f y).
+  by move: witness=> [a [b Pab]]; exists a, b; rewrite ler_oppl opprK.
+move=> x y xI yI.
+suff : (- f) y <= (- f) x = (y <= x) by rewrite ler_oppl opprK.
+apply: continuous_inj_le_itv xI => // [ x1 x1I | x1 x2 x1I x2I].
+- by apply/continuousN/fC.
+by move/oppr_inj; apply: fI.
+Qed.
+
 Lemma continuous_inj_le_itvcc (f : R -> R) (a b : R) :
   f a <= f b -> {in `[a, b], continuous f} -> {in `[a, b] &, injective f} ->
   {in `[a, b] &, {mono f : x y / x <= y}}.
@@ -177,21 +192,30 @@ move=> _ _ _ x y; rewrite !in_itv /= -ab=> /le_anti -> /le_anti ->.
 by rewrite !lexx.
 Qed.
 
-Lemma segment_continuous_inj_monotone (f : R -> R) (a b : R) :
-  {in `[a, b], continuous f} -> {in `[a, b] &, injective f} ->
-  {in `[a, b] &, {mono f : x y / x <= y}} \/
-  {in `[a, b] &, {mono f : x y /~ x <= y}}.
+Lemma itv_continuous_inj_monotone (f : R -> R) (I : interval R) :
+  {in I, continuous f} -> {in I &, injective f} ->
+  {in I &, {mono f : x y / x <= y}} \/
+  {in I &, {mono f : x y /~ x <= y}}.
 Proof.
 move=> fC fI.
+case: (lem (exists a b, a \in I /\ b \in I /\ a != b)); last first.
+  rewrite -forallNE=> allsame.
+  left=> x y xI yI; have := allsame x; rewrite -forallNE=> /(_ y).
+  rewrite not_andP=> [][[] // | ]; rewrite not_andP=> [] [[] // |].
+  by move/negP; rewrite negbK=> /eqP ->; rewrite !lexx.
+move=> [a [b [aI [bI anb]]]].
+wlog altb : a b aI bI anb / a < b.
+  move=> main.
+  case: (ltrP a b) => [altb | ].
+  apply: (main _ _ aI bI anb altb).
+  rewrite le_eqVlt eq_sym (negbTE anb) /= => blta.
+  by apply: (main _ _ bI aI _ blta); rewrite eq_sym.
 have [faLfb|fbLfa] : f a <= f b \/ f b <= f a.
 - by case: ltrgtP; try (by left); right.
-- by left; apply: continuous_inj_le_itvcc.
-right => x y xI yI.
-suff : (- f) y <= (- f) x = (y <= x) by rewrite ler_oppl opprK.
-apply: continuous_inj_le_itvcc xI => // [| x1 x1I |x1 x2 x1I y1I U].
-- by rewrite ler_oppl opprK.
-- by apply/continuousN/fC.
-by apply: fI => //; rewrite -[LHS]opprK [- f _]U opprK.
+- left; apply: continuous_inj_le_itv => //.
+  by exists a, b; rewrite aI bI altb faLfb.
+right; apply: continuous_inj_ge_itv => //.
+by exists a, b; rewrite aI bI altb fbLfa.
 Qed.
 
 Lemma subset_itv_oo_cc (a b : R) : {subset `]a, b[ <= `[a, b]}.
