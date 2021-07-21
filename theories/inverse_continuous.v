@@ -31,6 +31,9 @@ Lemma bound_in_itv (a b : R): ((a \in `[a, b]) = (a <= b)) *
                      (a \in `]-oo, a]).
 Proof. by rewrite !(boundr_in_itv, boundl_in_itv). Qed.
 
+(* All uses of this lemma have been removed, replacing them with
+  uses of interval_is_interval, but it would be better if
+  is_interval used large comparisons instead of strict ones. *)
 Lemma itvcc_le (x y : R) (I : interval R) :
   x <= y -> (`[x, y] <= I)%O = ((x \in I) && (y \in I)).
 Proof.
@@ -40,8 +43,10 @@ by move=> C; case: I => [[[] l| []] [[|] u| [|]]];
   rewrite ?(le_trans C) ?(le_trans _ C) ?(lt_le_trans _ C) ?(le_lt_trans C).
 Qed.
 
-(* This is just an example showing hot to use interval_is_interval
-  in the case of a large comparisons. the lemma is not used otherwise. *)
+(* This is just an example showing how to use interval_is_interval
+  in the case of a large comparisons. the lemma is not used otherwise.
+  the pattern is re-used several time during proofs, but not this lemma
+  in the hope that is_interval starts using large comparisons. *)
 Lemma interval_connected_le (I : interval R) (a b c : R) :
   a \in I -> b \in I -> a <= c <= b -> c \in I.
 Proof.
@@ -60,38 +65,38 @@ have stepper_main (f : R -> R) (a c b : R) :
   {in I, continuous f} -> {in I &, injective f} ->
   f a < f b -> a \in I -> b \in I -> a < c -> c < b -> f a < f c  /\ f c < f b.
   move=> fC fI faLfb aI bI aLc cLb.
-  have cI : c \in I by apply: (interval_is_interval aI bI); rewrite aLc.
+  have intP := interval_is_interval aI bI.
+  have cI : c \in I by apply: intP; rewrite aLc.
   have [aLb alb'] : a < b /\ a <= b by rewrite ltW (lt_trans aLc).
   have fxy x y : x\in I -> y\in I -> x < y -> f x != f y.
     move=> xI yI xLy; apply/negP=> /eqP /fI => /(_ xI yI) xy.
     by move: xLy; rewrite xy ltxx.
-  have abI : (`[a, b] <= I)%O by rewrite itvcc_le ?aI.
-  have [acI cbI] : (`[a,c] <= I)%O /\ (`[c,b] <= I)%O.
-    by split; apply: (le_trans _ abI);
-     rewrite subitvE /Order.le /= ?lexx ?aLc ?ltW.
   have [faLfc|fcLfa|/eqP faEfc] /= := ltrgtP (f a) (f c).
   - split;rewrite // lt_neqAle fxy // leNgt; apply/negP => fbLfc.
     move: (fbLfc); suff /eqP -> : c == b by rewrite ltxx.
     rewrite eq_le (ltW cLb) /=.
-    have [d dI fdEfb] : exists2 d, d \in `[a, c] & f d = f b.
+    have [d /andP[ad dc] fdEfb] : exists2 d, a <= d <= c & f d = f b.
       have aLc' : a <= c by rewrite ltW.
       apply: IVT => //; last first.
         by case: ltrgtP faLfc; rewrite // (ltW faLfb) // ltW.
-      apply: sub_in1 fC => y; rewrite in_itv /= !le_eqVlt => /andP[].
-      move=> /orP[/eqP <- | L] /orP[/eqP -> | ?] //.
-      by rewrite (interval_is_interval aI cI) ?L.
-    suff <- : d = b by rewrite (itvP dI).
-    by apply: fI fdEfb => //; rewrite (subitvP acI).
+      apply: sub_in1 fC => y; rewrite in_itv/= le_eqVlt andbC=> /andP[?].
+      move => /orP[/eqP<- | L] //; rewrite intP ?L //.
+      by rewrite (le_lt_trans _ cLb).
+    rewrite -(fI _ _ _ _ fdEfb) //.
+    move: ad dc; rewrite le_eqVlt=>/orP[/eqP <- | L] ? //.
+    by rewrite intP ?L // ?(le_lt_trans _ cLb).
   - have [fbLfc | fcLfb | fbEfc] /= := ltrgtP (f b) (f c).
     + by have := lt_trans fbLfc fcLfa; rewrite ltNge (ltW faLfb).
     + have [d /andP[cLd dLb] /eqP] : exists2 d, c <= d <= b & f d = f a.
         have cLb' : c <= b by rewrite ltW.
         apply: IVT => //; last by case: ltrgtP fcLfb; rewrite // !ltW.
-        by apply: sub_in1 fC; apply/subitvP.
+        apply: sub_in1 fC => y; rewrite in_itv /= => /andP[?].
+        rewrite le_eqVlt=> /orP[/eqP ->| L] //.
+        by rewrite intP ?L // (lt_le_trans aLc).
       have /fxy : a < d by rewrite (lt_le_trans aLc).
       have dI' : d \in I.
-        move: cLd dLb; rewrite !le_eqVlt=> /orP[/eqP<- | cd]/orP[/eqP->|?] //.
-        by rewrite (interval_is_interval cI bI) ?cd.
+        move: dLb; rewrite le_eqVlt=> /orP[/eqP->|db] //.
+        by rewrite intP // db  ?(lt_le_trans aLc).
       by rewrite eq_sym=> /(_ aI dI') => /negbTE ->.
     + by move: fcLfa; rewrite -fbEfc ltNge (ltW faLfb).
   by move/fxy: aLc=> /(_ aI cI); rewrite faEfc.
