@@ -48,12 +48,6 @@ rewrite (near_shift y 0); near=> z; rewrite /= sub0r subrK; near: z.
 by rewrite near_simpl; apply: near_in_itv.
 Grab Existential Variables. all: end_near. Qed.
 
-
-  {in ([set y | y in (interior [set f x | x in [set x | x \in I]])])%classic,
-  continuous g}.
-Proof.
-Admitted.
-
 Ltac staged_split :=
   repeat (rewrite andb_idr;[ | move=> *]).
 
