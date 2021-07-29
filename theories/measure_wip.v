@@ -902,7 +902,7 @@ Qed.
 End Hahn_extension.
 
 (* NB: not used *)
-Lemma subset_B_of (R : numDomainType) (A : (set R)^nat) k : B_of A k `<=` A k.
+Lemma subset_B_of (R : numDomainType) (A : (set R)^nat) k : seqD A k `<=` A k.
 Proof. by case: k => [|k] //= r []. Qed.
 
 (* NB: not used *)
@@ -1622,7 +1622,7 @@ case: ifPn => /asboolP bX; last first.
     split => [|Xr].
       rewrite le_eqVlt => /orP[/eqP -> //|rX].
       move/has_lbPn : bX => /(_ r)[y Xy yr].
-      by move: (iX _ _ Xy XsupX); apply; rewrite yr.
+      by move: (iX _ _ Xy XsupX); apply; rewrite !ltW ?yr.
     by rewrite /mkset sup_ub //; exact/asboolP.
   split => [rX|Xr]; last exact: sup_ub_strict.
   apply: (@interior_subset [topologicalType of R^o]).
@@ -1656,7 +1656,7 @@ rewrite in_itv /=; have [/asboolP XinfX /=| /asboolPn XinfX /=] := boolP `[< _ >
   rewrite andbT; split => [|Xr]; last exact: inf_lb.
   rewrite le_eqVlt => /orP[/eqP <- //|infXr].
   move/has_ubPn : uX => /(_ r)[y Xy yr].
-  by move: (iX _ _ XinfX Xy); apply; rewrite infXr.
+  by move: (iX _ _ XinfX Xy); apply; rewrite !ltW ?infXr.
 rewrite andbT.
 split=> [infXr|Xr]; last exact: inf_lb_strict.
 apply: (@interior_subset [topologicalType of R^o]).
@@ -2925,7 +2925,7 @@ Lemma conv_subset_Rhull (A : set R) :
     `<=` set_of_itv (Rhull A).
 Proof.
 move=> r -[a [b [t [Aa Ab /andP[t0 t1] ->{r}]]]].
-have /is_intervalPle iRhullA := @interval_is_interval _ (Rhull A).
+have iRhullA := @interval_is_interval _ (Rhull A).
 have [ab|/ltW ba] := leP a b.
   apply: (iRhullA a b); rewrite ?set_of_itv_mem; try exact/sub_Rhull.
   by rewrite le_conv // t0.
@@ -3261,7 +3261,7 @@ rewrite itv_cpltE; last 2 first.
   by rewrite /= !andbT; exact: le_itv_bnd1.
 rewrite inE; apply; rewrite sset_cons sset_cons1.
 set midi := itv_center i; set midj := itv_center j.
-move/is_intervalPle : sin => /(_ midi midj); apply.
+apply: (sin midi midj).
 - by left; rewrite set_of_itv_mem mem_itv_center // -set_of_itv_neq0 //; exact/set0P.
 - by right; rewrite set_of_itv_mem mem_itv_center // -set_of_itv_neq0 ; exact/set0P.
 - have := itv_center_bnd2 ine b; rewrite bx BSide_leE -/midi => midix.
@@ -4424,7 +4424,7 @@ Qed.
 Lemma nil_cons0_bigcup_bigU (f : (seq (interval R))^nat) :
   \bigcup_k \big[setU/set0]_(x <- f k) set_of_itv x =
   \bigcup_k \big[setU/set0]_(x <- nil_cons0 f k) set_of_itv x.
-Proof. by congr bigsetU; rewrite funeqE => j; exact: nil_cons0_bigU. Qed.
+Proof. by congr bigcup; rewrite funeqE => j; exact: nil_cons0_bigU. Qed.
 
 Lemma nil_cons0_sum (f : (seq (interval R))^nat) k :
   (\sum_(x <- f k) slength (set_of_itv x) =
