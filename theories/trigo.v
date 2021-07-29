@@ -4,7 +4,7 @@ From mathcomp Require Import matrix interval rat.
 Require Import boolp reals ereal.
 Require Import nsatz_realtype.
 Require Import classical_sets posnum topology normedtype landau sequences.
-Require Import derive exp inverse_continuous.
+Require Import derive exp.
 
 (******************************************************************************)
 (*                     Theory of trigonometric functions                      *)
@@ -991,30 +991,13 @@ apply/nbhs_ballP; exists (d/2) => [|t2 Bt2] //=; first by rewrite divr_gt0.
 by apply/dB/(ball_split Bt1).
 Qed.
 
-Lemma near_in_interval (a b : R) :
-  {in `]a, b[, forall y, \forall z \near y, z \in `]a, b[}.
-Proof.
-move=> y ayb; rewrite (near_shift 0 y).
-have minlt : 0 < minr (y - a) (b - y).
-  have : 0 < y - a by rewrite subr_gt0 (itvP ayb).
-  have : 0 < b - y by rewrite subr_gt0 (itvP ayb).
-  by case: (ltrP (y - a) (b - y)).
-near=> z; rewrite /= subr0.
-rewrite in_itv /= -ltr_subl_addl -ltr_subr_addl ltr_normlW /=; last first.
-  rewrite normrN.
-  by near: z; apply: nbhs0_lt; rewrite (lt_le_trans minlt) // le_minl lexx.
-rewrite -ltr_subr_addr ltr_normlW //.
-near: z; apply: nbhs0_lt; rewrite (lt_le_trans minlt) //.
-by rewrite le_minl lexx orbT.
-Grab Existential Variables. all: end_near. Qed.
-
 Lemma continuous_acos x : -1 < x < 1 -> {for x, continuous acos}.
 Proof.
 move=> /andP[x_gtN1 x_lt1]; rewrite -[x]acosK; first last.
   by have : -1 <= x <= 1 by rewrite !ltW //; case/andP: xB.
 apply: nbhs_singleton (continuous_inverse _ _); last first.
    by near=> z; apply: continuous_cos.
-have /near_in_interval aI : acos x \in `]0, pi[.
+have /near_in_itv aI : acos x \in `]0, pi[.
   suff : 0 < acos x < pi by [].
   by rewrite acos_gt0 ?ltW //= acos_ltpi // ltW ?andbT.
 near=> z; apply: cosK.
@@ -1028,7 +1011,7 @@ Global Instance is_derive1_acos (x : R) :
 Proof.
 move=> /andP[x_gtN1 x_lt1]; rewrite -sin_acos ?ltW // -invrN.
 rewrite -{1}[x]acosK; last by have : -1 <= x <= 1 by rewrite ltW // ltW.
-have /near_in_interval aI : acos x \in `]0, pi[.
+have /near_in_itv aI : acos x \in `]0, pi[.
   suff : 0 < acos x < pi by [].
   by rewrite acos_gt0 ?ltW //= acos_ltpi // ltW ?andbT.
 apply: (@is_derive_inverse R cos).
@@ -1113,7 +1096,7 @@ move=> /andP[x_gtN1 x_lt1]; rewrite -[x]asinK; first last.
   by have : -1 <= x <= 1 by rewrite !ltW //; case/andP: xB.
 apply: nbhs_singleton (continuous_inverse _ _); last first.
   by near=> z; apply: continuous_sin.
-have /near_in_interval aI : asin x \in `](-(pi/2)), (pi/2)[.
+have /near_in_itv aI : asin x \in `](-(pi/2)), (pi/2)[.
   suff : -(pi/2) < asin x < pi/2 by [].
   by rewrite asin_gtNpi2 ?ltW ?andbT //= asin_ltpi2 // ltW.
 near=> z; apply: sinK.
@@ -1127,7 +1110,7 @@ Global Instance is_derive1_asin (x : R) :
 Proof.
 move=> /andP[x_gtN1 x_lt1]; rewrite -cos_asin ?ltW //.
 rewrite -{1}[x]asinK; last by have : -1 <= x <= 1 by rewrite ltW // ltW.
-have /near_in_interval aI : asin x \in `](-(pi/2)), (pi/2)[.
+have /near_in_itv aI : asin x \in `](-(pi/2)), (pi/2)[.
   suff : -(pi/2) < asin x < pi/2 by [].
   by rewrite asin_gtNpi2 ?ltW ?andbT //= asin_ltpi2 // ltW.
 apply: (@is_derive_inverse R sin).
@@ -1212,7 +1195,7 @@ Qed.
 Lemma continuous_atan x : {for x, continuous atan}.
 Proof.
 rewrite -[x]atanK.
-have /near_in_interval aI : atan x \in `](-(pi/2)), (pi/2)[.
+have /near_in_itv aI : atan x \in `](-(pi/2)), (pi/2)[.
   suff : -(pi/2) < atan x < pi/2 by [].
   by rewrite atan_gtNpi2 atan_ltpi2.
 apply: nbhs_singleton (continuous_inverse _ _); last first.
@@ -1240,7 +1223,7 @@ rewrite -{1}[x]atanK.
 have cosD0 : cos (atan x) != 0.
   apply/lt0r_neq0; apply: cos_gt0_pihalf.
   by rewrite atan_gtNpi2 atan_ltpi2.
-have /near_in_interval aI : atan x \in `](-(pi/2)), (pi/2)[.
+have /near_in_itv aI : atan x \in `](-(pi/2)), (pi/2)[.
   suff : -(pi/2) < atan x < pi/2 by [].
   by rewrite atan_gtNpi2 atan_ltpi2.
 apply: (@is_derive_inverse R tan).
