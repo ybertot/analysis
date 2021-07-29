@@ -4,7 +4,7 @@ From mathcomp Require Import matrix interval rat.
 Require Import boolp reals ereal.
 Require Import nsatz_realtype.
 Require Import classical_sets posnum topology normedtype landau sequences.
-Require Import derive continuous_inverse.
+Require Import derive.
 
 (******************************************************************************)
 (*               Theory of exponential/logarithm functions                    *)
@@ -326,7 +326,7 @@ have F1 : (h (g x))^-1 @[x --> f x] --> g1 (f x).
 apply: cvg_sub0 F1.
 apply/cvg_distP => eps eps_gt0 /=; rewrite !near_simpl /=.
 near=> y; rewrite sub0r normrN; rcfE.
-have fgyE : f (g y) = y by near: y; apply: inverse_swap_continuous.
+have fgyE : f (g y) = y by near: y; apply: continuous_can_sym.
 rewrite /g1; case: eqP => [_|/eqP x1Dfx]; first by rewrite subrr normr0.
 have -> : y - f x  = h (g y) * (g y - x) by rewrite -fE fgyE.
 rewrite gfxE invfM mulrC divfK ?subrr ?normr0 // subr_eq0.
