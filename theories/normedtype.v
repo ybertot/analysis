@@ -4149,7 +4149,7 @@ case: (ltrgtP a b)=> [aLb | bLa | ab].
 move=> _ _ _ x y; rewrite !in_itv /= -ab=> /le_anti -> /le_anti ->.
 by rewrite !lexx.
 Qed.
-  
+
 Let Cf (f : R -> R) a b := {in `[a, b], continuous f}.
 Let If (f : R -> R) a b := {in `[a, b] &, injective f}.
 Let Mf (f : R -> R) a b := {in `[a, b] &, {mono f : x y / x <= y}}.
@@ -4255,7 +4255,7 @@ suff main : (forall (a b : R) (g f : R -> R) y, a < b -> f a < f b ->
   have ogK : {in `[(- f b), (- f a)],
         cancel (-%R \o g \o -%R) (-%R \o f \o -%R)}.
     move=> v; rewrite -oppr_itvcc /= => vin.
-    by rewrite opprK gK // opprK.    
+    by rewrite opprK gK // opprK.
   have oyin : -y \in `](- f b), (- f a)[ by rewrite oppr_itvoo !opprK.
   have := main _ _ (-%R \o g \o -%R)(-%R \o f \o -%R) (-y) obLoa.
     rewrite /= 2!opprK=> /(_ ofbLofa monof monog ofK ogK oyin) main'.
@@ -4264,9 +4264,9 @@ suff main : (forall (a b : R) (g f : R -> R) y, a < b -> f a < f b ->
   - by near: u; apply: (main a b _ f).
   rewrite -(opprK y) -(opprK u) ltr_oppr -normrN opprD [in X in X -> _]opprK.
   near: u; rewrite near_simpl.
-  by rewrite (nearN y (fun w => w < - y -> 
+  by rewrite (nearN y (fun w => w < - y ->
                 `|- g(- - y) - - g (- w)| < e%:num)).
-move=> {a b f g aLb faLfb aab bab monf mong fK gK y yin}. 
+move=> {a b f g aLb faLfb aab bab monf mong fK gK y yin}.
 move=> a b g f y aLb faLfb monf mong fK gK yin.
 have aab : a \in `[a, b] by rewrite in_itv /= lexx ltW.
 have bab : b \in `[a, b] by rewrite in_itv /= lexx andbT ltW.

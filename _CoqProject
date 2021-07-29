@@ -32,5 +32,4 @@ theories/altreals/realseq.v
 theories/altreals/realsum.v
 theories/altreals/distr.v
 
-
 -R theories mathcomp.analysis
