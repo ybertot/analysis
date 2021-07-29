@@ -4154,6 +4154,8 @@ Let Cf (f : R -> R) a b := {in `[a, b], continuous f}.
 Let If (f : R -> R) a b := {in `[a, b] &, injective f}.
 Let Mf (f : R -> R) a b := {in `[a, b] &, {mono f : x y / x <= y}}.
 
+(* The condition "f a <= f b" is unnecessary because the last                *)
+(* interval condition is vacuously true otherwise.                           *)
 Lemma segment_left_inverse_increasing (a b : R) (f g : R -> R) :
   a < b ->
   {in `[a, b], continuous f} ->
@@ -4177,6 +4179,39 @@ move=> x y xin yin.
 have := IVT (ltW aLb) ctf; case: (ltrgtP (f a) (f b)) (faLfb')=> // _ _ ivt.
 case: (ivt _ xin) => [u uin fux]; case: (ivt _ yin) => [v vin fvy].
 by rewrite -fvy -fux; apply/esym; rewrite !fK //; apply: incr.
+Qed.
+
+(* The condition "f b <= f a" is unnecessary---see seg...increasing above    *)
+Lemma segment_left_inverse_decreasing (a b : R) (f g : R -> R) :
+  a < b ->
+  {in `[a, b], continuous f} ->
+  {in `[a, b], cancel f g} ->
+  {in `[(f b), (f a)] &, {mono g : x y /~ x <= y}}.
+Proof.
+case: (ltrP (f a) (f b)) => [faLfb | fbLfa].
+  move=> _ _ _ x y; rewrite in_itv /= => /andP [fbLx xLfa].
+  by move: faLfb; rewrite ltNge (le_trans fbLx).
+move=> aLb ctf fK.
+have [aab bab] : a \in `[a, b] /\ b \in `[a, b] by rewrite !bound_itvE ltW.
+have fanfb : f a != f b.
+  by apply/eqP=> fafb; move: (aLb); rewrite -(fK a) // fafb (fK b) // ltxx.
+have ctf' : Cf (-f) a b.
+  by move=> x xi; apply/continuousN/ctf.
+have ijf : If (-f) a b.
+  move=> x y xin yin /= fq.
+  by rewrite -(fK x) // -(opprK (f x)) [X in g (- X)]fq opprK fK.
+have w : exists x y, [/\ x \in `[a, b], y \in `[a, b], x < y & - f x <= - f y].
+  by exists a, b; rewrite !bound_itvE ler_oppl opprK fbLfa ltW aLb.
+have incr := itv_continuous_inj_le w ctf' ijf.
+have fbLfa' : -f a < -f b.
+  by rewrite ltr_oppl opprK lt_neqAle eq_sym fanfb fbLfa.
+move=> x y xin yin.
+have := IVT (ltW aLb) ctf'; case: (ltrgtP (-f b) (-f a)) (fbLfa')=> // _ _ ivt.
+have xin' : -x \in `[(-f a), (-f b)] by rewrite oppr_itvcc !opprK.
+have yin' : -y \in `[(-f a), (-f b)] by rewrite oppr_itvcc !opprK.
+case: (ivt _ xin') => [u uin fux]; case: (ivt _ yin') => [v vin fvy].
+rewrite -(opprK x) -(opprK y) -fvy -fux !opprK !fK //.
+by rewrite -(opprK (f v)) ler_oppl // incr.
 Qed.
 
 Lemma itv_continuous_inj_monotone (f : R -> R) (I : interval R) :
