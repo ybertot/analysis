@@ -4049,7 +4049,7 @@ have stepper_main (f : R -> R) (a c b : R) :
   f a < f b -> a \in I -> b \in I -> a < c -> c < b -> f a < f c  /\ f c < f b.
   move=> fC fI faLfb aI bI aLc cLb.
   have intP := interval_is_interval aI bI.
-  have cI : c \in I by apply: intP; rewrite aLc.
+  have cI : c \in I by apply: intP; rewrite !ltW ?aLc.
   have [aLb alb'] : a < b /\ a <= b by rewrite ltW (lt_trans aLc).
   have [faLfc|fcLfa|/eqP faEfc] /= := ltrgtP (f a) (f c).
   - split;rewrite // lt_neqAle fxy // leNgt; apply/negP => fbLfc.
@@ -4059,23 +4059,19 @@ have stepper_main (f : R -> R) (a c b : R) :
       have aLc' : a <= c by rewrite ltW.
       apply: IVT => //; last first.
         by case: ltrgtP faLfc; rewrite // (ltW faLfb) // ltW.
-      apply: sub_in1 fC => y; rewrite in_itv/= le_eqVlt andbC=> /andP[yc].
-      by move => /orP[/eqP<- | L] //; rewrite intP ?L // (le_lt_trans _ cLb).
-    rewrite -(fI _ _ _ _ fdEfb) //.
-    move: ad dc; rewrite le_eqVlt=>/orP[/eqP <- | L] dc //.
-    by rewrite intP ?L // ?(le_lt_trans _ cLb).
+      apply: sub_in1 fC => y; rewrite in_itv /= => /andP[L M].
+      by rewrite intP // L ?(ltW (le_lt_trans M _)).
+    by rewrite -(fI _ _ _ _ fdEfb) // intP ?ad ?(le_trans dc) ?ltW.
   - have [fbLfc | fcLfb | fbEfc] /= := ltrgtP (f b) (f c).
     + by have := lt_trans fbLfc fcLfa; rewrite ltNge (ltW faLfb).
     + have [d /andP[cLd dLb] /eqP] : exists2 d, c <= d <= b & f d = f a.
         have cLb' : c <= b by rewrite ltW.
         apply: IVT => //; last by case: ltrgtP fcLfb; rewrite // !ltW.
-        apply: sub_in1 fC => y; rewrite in_itv /= => /andP[yc].
-        rewrite le_eqVlt=> /orP[/eqP -> //| L].
-        by rewrite intP ?L // (lt_le_trans aLc).
+        apply: sub_in1 fC => y; rewrite in_itv /= => /andP[cy yc].
+        by rewrite intP ?yc ?(le_trans _ cy) ?ltW.
       have /(fxy f fI) : a < d by rewrite (lt_le_trans aLc).
       suff dI' : d \in I by rewrite eq_sym=> /(_ aI dI') => /negbTE ->.
-      move: dLb; rewrite le_eqVlt=> /orP[/eqP->|db] //.
-      by rewrite intP // db  ?(lt_le_trans aLc).
+      by rewrite intP // dLb ?(le_trans _ cLd) ?ltW.
     + by move: fcLfa; rewrite -fbEfc ltNge (ltW faLfb).
   by move/(fxy _ fI) : aLc=> /(_ aI cI); rewrite faEfc.
 move=> f [u [v [uI vI ulv fuLfv]]] fC fI.
@@ -4085,7 +4081,7 @@ have stepper' a c b : a \in I -> b \in I -> a < c -> c < b ->
    (f a < f c -> f a < f b /\ f c < f b) /\
    (f c < f b -> f a < f b /\ f a < f c).
   move=>  aI bI aLc cLb; move: (lt_trans aLc cLb) => aLb.
-  have cI : c \in I by rewrite (interval_is_interval aI bI) ?aLc.
+  have cI : c \in I by rewrite (interval_is_interval aI bI) ?(ltW aLc) ?ltW.
   have fanfb : f a != f b by apply: (fxy f fI).
   have decr : f b  < f a -> f b < f c /\ f c < f a.
     have ofC : {in I, continuous (-f)} by move=>> ?; apply/continuousN/fC.
